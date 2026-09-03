@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Real-Time AI B2B Sales Agent - Live Tester</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 850px;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    h1 {
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.75rem 1.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-weight: 500;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+    .dot.connected { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .dot.recording { background: var(--danger); animation: pulse 1.2s infinite; }
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    button {
+      flex: 1;
+      min-width: 180px;
+      padding: 0.9rem 1.2rem;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: #dc2626;
+    }
+    .btn-secondary {
+      background: #334155;
+      color: #e2e8f0;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: #475569;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 680px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      min-height: 280px;
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-content {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .transcript-box {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 8px;
+      padding: 0.75rem;
+      min-height: 180px;
+      border: 1px dashed var(--border);
+    }
+    .transcript-partial {
+      color: #94a3b8;
+      font-style: italic;
+    }
+    .transcript-final {
+      color: #60a5fa;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    .agent-bubble {
+      background: #1e3a8a;
+      border-left: 4px solid var(--accent);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .agent-meta {
+      font-size: 0.75rem;
+      color: #93c5fd;
+      margin-bottom: 0.25rem;
+    }
+    .logs-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      max-height: 160px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .log-line { margin-bottom: 0.2rem; }
+    .log-info { color: #38bdf8; }
+    .log-success { color: #4ade80; }
+    .log-warn { color: #fbbf24; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎙️ AI B2B Sales Agent</h1>
+      <p class="subtitle">AssemblyAI Real-Time STT + LangGraph Agent + Groq LLM</p>
+    </header>
+
+    <div class="status-bar">
+      <div class="badge">
+        <span class="dot" id="ws-dot"></span>
+        <span id="ws-status">WebSocket: Disconnected</span>
+      </div>
+      <div class="badge">
+        <span class="dot" id="mic-dot"></span>
+        <span id="mic-status">Microphone: Idle</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="btn-start" class="btn-primary">
+        🎤 Start Talking (Mic)
+      </button>
+      <button id="btn-stop" class="btn-danger" disabled>
+        ⏹️ Stop Talking
+      </button>
+      <button id="btn-sample" class="btn-secondary">
+        ▶️ Stream Sample Audio
+      </button>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">
+          <span>Customer Speech (STT)</span>
+          <span style="font-size: 0.75rem; color: #38bdf8;">AssemblyAI v3</span>
+        </div>
+        <div class="transcript-box" id="transcript-container">
+          <div id="final-transcripts"></div>
+          <div id="partial-transcript" class="transcript-partial">Click "Start Talking" and speak into your microphone...</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>AI Sales Agent Response</span>
+          <span style="font-size: 0.75rem; color: #a78bfa;">LangGraph + Groq</span>
+        </div>
+        <div class="card-content" id="agent-container">
+          <div style="color: var(--text-muted); font-size: 0.9rem;">The AI sales agent's responses will appear here after you speak.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="logs-container" id="logs">
+      <div class="log-line log-info">[System Ready] Click "Start Talking" or "Stream Sample Audio" to test.</div>
+    </div>
+  </div>
+
+  <script>
+    let ws = null;
+    let audioContext = null;
+    let mediaStream = null;
+    let processor = null;
+
+    const btnStart = document.getElementById("btn-start");
+    const btnStop = document.getElementById("btn-stop");
+    const btnSample = document.getElementById("btn-sample");
+    const wsDot = document.getElementById("ws-dot");
+    const wsStatus = document.getElementById("ws-status");
+    const micDot = document.getElementById("mic-dot");
+    const micStatus = document.getElementById("mic-status");
+    const partialDiv = document.getElementById("partial-transcript");
+    const finalDiv = document.getElementById("final-transcripts");
+    const agentContainer = document.getElementById("agent-container");
+    const logsDiv = document.getElementById("logs");
+
+    function log(msg, type = "info") {
+      const line = document.createElement("div");
+      line.className = `log-line log-${type}`;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logsDiv.appendChild(line);
+      logsDiv.scrollTop = logsDiv.scrollHeight;
+    }
+
+    function connectWebSocket() {
+      return new Promise((resolve, reject) => {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = `${protocol}//${window.location.host}/ws/audio`;
+        log(`Connecting to WebSocket: ${wsUrl}...`);
+        
+        ws = new WebSocket(wsUrl);
+        ws.binaryType = "arraybuffer";
+
+        ws.onopen = () => {
+          wsDot.className = "dot connected";
+          wsStatus.textContent = "WebSocket: Connected";
+          log("WebSocket connection established!", "success");
+          resolve(ws);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "transcript") {
+              if (data.is_final) {
+                partialDiv.textContent = "";
+                const item = document.createElement("div");
+                item.className = "transcript-final";
+                item.textContent = `“${data.text}”`;
+                finalDiv.appendChild(item);
+                log(`Final Transcript: "${data.text}"`, "success");
+              } else {
+                partialDiv.textContent = `“${data.text}”`;
+              }
+            } else if (data.type === "agent_response") {
+              const bubble = document.createElement("div");
+              bubble.className = "agent-bubble";
+              bubble.innerHTML = `
+                <div class="agent-meta">Sales Rep (${new Date().toLocaleTimeString()}):</div>
+                <div>${data.text}</div>
+              `;
+              agentContainer.appendChild(bubble);
+              agentContainer.scrollTop = agentContainer.scrollHeight;
+              log(`Agent Response generated!`, "success");
+            }
+          } catch (e) {
+            console.error("Message parse error", e);
+          }
+        };
+
+        ws.onerror = (err) => {
+          log("WebSocket error occurred", "warn");
+          reject(err);
+        };
+
+        ws.onclose = () => {
+          wsDot.className = "dot";
+          wsStatus.textContent = "WebSocket: Disconnected";
+          log("WebSocket closed");
+        };
+      });
+    }
+
+    async function startMicrophone() {
+      try {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          await connectWebSocket();
+        }
+
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: 16000,
+            echoCancellation: true,
+            noiseSuppression: true
+          }
+        });
+
+        audioContext = new (window.AudioContext || window.webkitAudioContext)({
+          sampleRate: 16000
+        });
+
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+
+        processor.onaudioprocess = (e) => {
+          if (!ws || ws.readyState !== WebSocket.OPEN) return;
+          const inputData = e.inputBuffer.getChannelData(0);
+          // Convert Float32 to 16-bit PCM
+          const pcm16 = new Int16Array(inputData.length);
+          for (let i = 0; i < inputData.length; i++) {
+            let s = Math.max(-1, Math.min(1, inputData[i]));
+            pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+          ws.send(pcm16.buffer);
+        };
+
+        btnStart.disabled = true;
+        btnStop.disabled = false;
+        btnSample.disabled = true;
+        micDot.className = "dot recording";
+        micStatus.textContent = "Microphone: Live (Streaming)";
+        log("Microphone streaming started at 16kHz PCM.", "success");
+      } catch (err) {
+        log(`Microphone access error: ${err.message}`, "warn");
+        console.error(err);
+      }
+    }
+
+    function stopMicrophone() {
+      if (processor) {
+        processor.disconnect();
+        processor = null;
+      }
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+      }
+      if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+      }
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+
+      btnStart.disabled = false;
+      btnStop.disabled = true;
+      btnSample.disabled = false;
+      micDot.className = "dot";
+      micStatus.textContent = "Microphone: Idle";
+      log("Microphone stopped and session closed.");
+    }
+
+    async function streamSampleAudio() {
+      try {
+        btnStart.disabled = true;
+        btnSample.disabled = true;
+        btnStop.disabled = false;
+
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          await connectWebSocket();
+        }
+
+        log("Fetching pre-recorded sample audio...");
+        const res = await fetch("/sample-audio");
+        if (!res.ok) {
+          throw new Error("Sample audio not found on server");
+        }
+        const arrayBuffer = await res.arrayBuffer();
+        
+        // Skip WAV 44-byte header to stream raw 16kHz PCM
+        const pcmData = arrayBuffer.slice(44);
+        const chunkSize = 3200; // 100ms at 16kHz 16-bit
+        log(`Streaming sample audio (${pcmData.byteLength} bytes)...`);
+
+        let offset = 0;
+        const interval = setInterval(() => {
+          if (offset < pcmData.byteLength && ws && ws.readyState === WebSocket.OPEN) {
+            const chunk = pcmData.slice(offset, offset + chunkSize);
+            ws.send(chunk);
+            offset += chunkSize;
+          } else {
+            clearInterval(interval);
+            log("Finished streaming sample audio. Waiting for turn completion...");
+            // Send 1s of silence for turn detection
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(new Uint8Array(32000).buffer);
+            }
+            btnStart.disabled = false;
+            btnSample.disabled = false;
+            btnStop.disabled = true;
+          }
+        }, 80);
+
+      } catch (err) {
+        log(`Sample audio error: ${err.message}`, "warn");
+        btnStart.disabled = false;
+        btnSample.disabled = false;
+        btnStop.disabled = true;
+      }
+    }
+
+    btnStart.addEventListener("click", startMicrophone);
+    btnStop.addEventListener("click", stopMicrophone);
+    btnSample.addEventListener("click", streamSampleAudio);
+  </script>
+</body>
+</html>
