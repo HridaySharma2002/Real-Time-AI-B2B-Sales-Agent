@@ -1,6 +1,6 @@
 """
 services/b2b_enrichment.py - External B2B Lead Enrichment Service
-Part of VintushTech Real-Time AI B2B Sales Agent.
+Part of ApexSales AI Real-Time B2B Sales Agent.
 
 Features:
 - Enriches prospect inquiries with firmographics, company size, tech stack, and estimated ARR.

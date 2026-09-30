@@ -1,9 +1,9 @@
-package com.vintushtech.sales.controller;
+package com.apexsales.sales.controller;
 
-import com.vintushtech.sales.model.Lead;
-import com.vintushtech.sales.model.Interaction;
-import com.vintushtech.sales.model.CallAnalytics;
-import com.vintushtech.sales.service.LeadPersistenceService;
+import com.apexsales.sales.model.Lead;
+import com.apexsales.sales.model.Interaction;
+import com.apexsales.sales.model.CallAnalytics;
+import com.apexsales.sales.service.LeadPersistenceService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -26,7 +26,7 @@ public class LeadController {
     public Mono<Map<String, String>> health() {
         return Mono.just(Map.of(
                 "status", "UP",
-                "service", "VintushTech Reactive Spring WebFlux Microservice",
+                "service", "ApexSales AI Reactive Spring WebFlux Microservice",
                 "framework", "Spring Boot 3 + Project Reactor"
         ));
     }
@@ -70,3 +70,4 @@ public class LeadController {
         return persistenceService.getAllAnalytics();
     }
 }
+

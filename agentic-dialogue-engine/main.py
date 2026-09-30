@@ -1,6 +1,6 @@
 """
 agentic-dialogue-engine/main.py - Real-Time FastAPI Server & Streaming WebSocket Gateway
-Part of VintushTech Real-Time AI B2B Sales Agent.
+Part of ApexSales AI Real-Time B2B Sales Agent.
 
 Features:
 - Real-time audio WebSocket endpoint (`/ws/audio`):
@@ -47,7 +47,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(na
 logger = logging.getLogger("SalesAgentServer")
 
 app = FastAPI(
-    title="VintushTech Real-Time AI B2B Sales Agent",
+    title="ApexSales AI Real-Time B2B Sales Agent",
     version="2.0.0",
     description="Real-Time Speech-to-Speech B2B Sales Dialogue Engine with LangGraph, ChromaDB, and K-Means"
 )
@@ -89,7 +89,7 @@ class LeadCreateRequest(BaseModel):
 def read_root():
     return {
         "status": "running",
-        "platform": "VintushTech Real-Time AI B2B Sales Agent",
+        "platform": "ApexSales AI Real-Time B2B Sales Agent",
         "version": "2.0.0",
         "endpoints": {
             "sales_console_ui": "/test",
@@ -214,7 +214,7 @@ async def websocket_audio_endpoint(websocket: WebSocket):
         "type": "connection_established",
         "session_id": session_id,
         "lead_id": lead_id,
-        "message": "Connected to VintushTech Real-Time Audio Engine"
+        "message": "Connected to ApexSales AI Real-Time Audio Engine"
     })
 
     def send_transcript(text: str, is_final: bool):

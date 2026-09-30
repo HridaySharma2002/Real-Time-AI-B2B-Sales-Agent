@@ -1,4 +1,4 @@
-package com.vintushtech.sales.client;
+package com.apexsales.sales.client;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -43,3 +43,4 @@ public class FastApiWebClient {
                 .onErrorResume(e -> Mono.just(Map.of("status", "fastapi_unreachable")));
     }
 }
+

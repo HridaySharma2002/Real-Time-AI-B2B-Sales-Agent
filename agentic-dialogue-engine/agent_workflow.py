@@ -1,6 +1,6 @@
 """
 agentic-dialogue-engine/agent_workflow.py - LangGraph Multi-Step Reasoning Sales Agent
-Part of VintushTech Real-Time AI B2B Sales Agent.
+Part of ApexSales AI Real-Time B2B Sales Agent.
 
 Architecture & Reasoning Steps:
 1. `segment_lead_node`:
@@ -171,7 +171,7 @@ def retrieve_rag_node(state: AgentState):
     for c in chunks:
         context_snippets.append(c["content"])
 
-    rag_text = "\n\n".join(context_snippets) if context_snippets else "Standard VintushTech B2B Sales packages starting at $499/mo (Starter) to $3,500/mo (Enterprise Custom)."
+    rag_text = "\n\n".join(context_snippets) if context_snippets else "Standard ApexSales AI B2B Sales packages starting at $499/mo (Starter) to $3,500/mo (Enterprise Custom)."
     return {"rag_context": rag_text}
 
 
@@ -188,7 +188,7 @@ def generate_response_node(state: AgentState):
     enrichment = state.get("enrichment", {})
     company = enrichment.get("company", "your organization")
 
-    system_prompt = f"""You are Sarah, an elite Senior B2B Sales Representative for VintushTech (ApexSales AI).
+    system_prompt = f"""You are Sarah, an elite Senior B2B Sales Representative for ApexSales AI.
 Target Prospect Organization: {company}
 Prospect Segment (K-Means): {persona}
 Sales Strategy & Objection Playbook: {tactic}
@@ -214,7 +214,7 @@ Rules for Real-Time Phone/Voice Response:
             ai_text = "I'd be delighted to walk you through our platform—we help teams scale outbound calls with sub-500ms voice AI. Would you be open to a 10-minute demo on Thursday?"
             response = AIMessage(content=ai_text)
     else:
-        ai_text = "Thanks for connecting with VintushTech! Our Starter plan is $499/mo and Enterprise is $3,500/mo. What's your primary priority for inbound calls this quarter?"
+        ai_text = "Thanks for connecting with ApexSales AI! Our Starter plan is $499/mo and Enterprise is $3,500/mo. What's your primary priority for inbound calls this quarter?"
         response = AIMessage(content=ai_text)
 
     return {"messages": [response]}
@@ -226,53 +226,58 @@ Rules for Real-Time Phone/Voice Response:
 
 def sync_telemetry_node(state: AgentState):
     """Synchronizes call turn and prospect data asynchronously to Redis, MongoDB, and Spring WebFlux."""
-    session_id = state.get("session_id", "default_session")
-    lead_id = state.get("lead_id", "lead_default")
-    user_msg = state["messages"][-2].content if len(state.get("messages", [])) >= 2 else ""
-    ai_reply = state["messages"][-1].content if state.get("messages") else ""
+    import threading
 
-    # 1. Update Redis Cache
-    try:
-        cache = get_redis_cache()
-        cache.append_call_turn(session_id, user_msg, ai_reply, state.get("sentiment", 0.0))
-        cache.cache_lead_persona(lead_id, {
-            "persona": state.get("persona"),
-            "cluster_id": state.get("cluster_id"),
-            "friction_topic": state.get("friction_topic"),
-            "enrichment": state.get("enrichment")
-        })
-    except Exception as e:
-        logger.debug(f"Redis cache sync error: {e}")
+    def _persist_telemetry_bg():
+        session_id = state.get("session_id", "default_session")
+        lead_id = state.get("lead_id", "lead_default")
+        user_msg = state["messages"][-2].content if len(state.get("messages", [])) >= 2 else ""
+        ai_reply = state["messages"][-1].content if state.get("messages") else ""
 
-    # 2. Update MongoDB Atlas
-    try:
-        db = get_mongo_service()
-        db.record_interaction(lead_id, session_id, {
-            "user_msg": user_msg,
-            "ai_reply": ai_reply,
-            "persona": state.get("persona"),
-            "cluster_id": state.get("cluster_id"),
-            "friction_topic": state.get("friction_topic"),
-            "sentiment": state.get("sentiment")
-        })
-    except Exception as e:
-        logger.debug(f"MongoDB record interaction error: {e}")
+        # 1. Update Redis Cache
+        try:
+            cache = get_redis_cache()
+            cache.append_call_turn(session_id, user_msg, ai_reply, state.get("sentiment", 0.0))
+            cache.cache_lead_persona(lead_id, {
+                "persona": state.get("persona"),
+                "cluster_id": state.get("cluster_id"),
+                "friction_topic": state.get("friction_topic"),
+                "enrichment": state.get("enrichment")
+            })
+        except Exception as e:
+            logger.debug(f"Redis cache sync error: {e}")
 
-    # 3. Dispatch to Java Spring WebFlux Microservice
-    try:
-        spring_client = get_spring_sync_client()
-        spring_client.dispatch_sync_lead_bg({
-            "lead_id": lead_id,
-            "session_id": session_id,
-            "persona": state.get("persona"),
-            "cluster_id": state.get("cluster_id"),
-            "friction_topic": state.get("friction_topic"),
-            "company": state.get("enrichment", {}).get("company", "Prospect"),
-            "last_interaction": ai_reply
-        })
-    except Exception as e:
-        logger.debug(f"Spring WebFlux dispatch error: {e}")
+        # 2. Update MongoDB Atlas
+        try:
+            db = get_mongo_service()
+            db.record_interaction(lead_id, session_id, {
+                "user_msg": user_msg,
+                "ai_reply": ai_reply,
+                "persona": state.get("persona"),
+                "cluster_id": state.get("cluster_id"),
+                "friction_topic": state.get("friction_topic"),
+                "sentiment": state.get("sentiment")
+            })
+        except Exception as e:
+            logger.debug(f"MongoDB record interaction error: {e}")
 
+        # 3. Dispatch to Java Spring WebFlux Microservice
+        try:
+            spring_client = get_spring_sync_client()
+            spring_client.dispatch_sync_lead_bg({
+                "lead_id": lead_id,
+                "session_id": session_id,
+                "persona": state.get("persona"),
+                "cluster_id": state.get("cluster_id"),
+                "friction_topic": state.get("friction_topic"),
+                "company": state.get("enrichment", {}).get("company", "Prospect"),
+                "last_interaction": ai_reply
+            })
+        except Exception as e:
+            logger.debug(f"Spring WebFlux dispatch error: {e}")
+
+    # Launch background thread for non-blocking persistence
+    threading.Thread(target=_persist_telemetry_bg, daemon=True).start()
     return {}
 
 

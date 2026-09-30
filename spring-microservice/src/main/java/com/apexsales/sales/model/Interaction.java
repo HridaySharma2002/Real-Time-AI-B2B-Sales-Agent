@@ -1,4 +1,4 @@
-package com.vintushtech.sales.model;
+package com.apexsales.sales.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
@@ -50,3 +50,4 @@ public class Interaction {
     public String getTimestamp() { return timestamp; }
     public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
 }
+

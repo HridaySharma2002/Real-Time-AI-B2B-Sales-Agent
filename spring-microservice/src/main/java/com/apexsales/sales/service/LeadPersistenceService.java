@@ -1,10 +1,10 @@
-package com.vintushtech.sales.service;
+package com.apexsales.sales.service;
 
-import com.vintushtech.sales.client.FastApiWebClient;
-import com.vintushtech.sales.model.Lead;
-import com.vintushtech.sales.model.Interaction;
-import com.vintushtech.sales.model.CallAnalytics;
-import com.vintushtech.sales.repository.ReactiveLeadRepository;
+import com.apexsales.sales.client.FastApiWebClient;
+import com.apexsales.sales.model.Lead;
+import com.apexsales.sales.model.Interaction;
+import com.apexsales.sales.model.CallAnalytics;
+import com.apexsales.sales.repository.ReactiveLeadRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -65,3 +65,4 @@ public class LeadPersistenceService {
         return repository.findAllAnalytics();
     }
 }
+

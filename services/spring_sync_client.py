@@ -1,6 +1,6 @@
 """
 services/spring_sync_client.py - Async Data Sync Client for Java Spring WebFlux Microservice
-Part of VintushTech Real-Time AI B2B Sales Agent.
+Part of ApexSales AI Real-Time B2B Sales Agent.
 
 Features:
 - Non-blocking asynchronous sync from FastAPI to the Java Spring WebFlux microservice.

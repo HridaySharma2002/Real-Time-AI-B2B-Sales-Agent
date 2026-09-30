@@ -1,4 +1,4 @@
-# VintushTech Real-Time AI B2B Sales Agent
+# ApexSales AI - Real-Time AI B2B Sales Agent
 
 An enterprise-grade, real-time speech-to-speech AI B2B Sales Agent platform built with **FastAPI**, **LangGraph**, **ChromaDB**, **AssemblyAI Streaming STT**, **Chatterbox/Kokoro Neural TTS**, and a **Reactive Java Spring WebFlux Microservice**.
 
@@ -75,7 +75,7 @@ GROQ_MODEL=openai/gpt-oss-120b
 GEMINI_API_KEY=your_gemini_api_key
 
 # Optional / External services
-MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/vintushtech_sales
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/apexsales_db
 REDIS_HOST=localhost
 REDIS_PORT=6379
 SPRING_SERVICE_URL=http://localhost:8080

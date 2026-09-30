@@ -1,6 +1,6 @@
 """
 services/chroma_rag.py - Dynamic ChromaDB Vector Store & RAG Retrieval Pipeline
-Part of VintushTech Real-Time AI B2B Sales Agent.
+Part of ApexSales AI Real-Time B2B Sales Agent.
 
 Features:
 - Persistent ChromaDB vector database storing B2B sales knowledge chunks.
@@ -33,13 +33,13 @@ CHROMA_PERSIST_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".
 class ChromaRAGPipeline:
     """
     Dynamic RAG pipeline powered by ChromaDB for sub-millisecond retrieval
-    of VintushTech sales packages, pricing, battlecards, and objection scripts.
+    of ApexSales AI sales packages, pricing, battlecards, and objection scripts.
     """
 
     def __init__(self, kb_file: str = DEFAULT_KB_PATH, persist_dir: str = CHROMA_PERSIST_DIR):
         self.kb_file = kb_file
         self.persist_dir = persist_dir
-        self.collection_name = "vintushtech_sales_kb"
+        self.collection_name = "apexsales_kb"
         self.client = None
         self.collection = None
         self._initialized = False

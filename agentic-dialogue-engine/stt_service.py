@@ -1,6 +1,6 @@
 """
 agentic-dialogue-engine/stt_service.py - AssemblyAI Real-Time STT + TTS Audio Streaming
-Part of VintushTech Real-Time AI B2B Sales Agent.
+Part of ApexSales AI Real-Time B2B Sales Agent.
 
 Features:
 - Connects to AssemblyAI Streaming v3 WebSocket for real-time speech-to-text.

@@ -11,11 +11,11 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.vintushtech</groupId>
+    <groupId>com.apexsales</groupId>
     <artifactId>sales-microservice</artifactId>
     <version>1.0.0</version>
     <name>sales-microservice</name>
-    <description>VintushTech Real-Time AI B2B Sales Agent - Reactive Spring WebFlux Microservice</description>
+    <description>ApexSales AI Real-Time B2B Sales Agent - Reactive Spring WebFlux Microservice</description>
 
     <properties>
         <java.version>21</java.version>

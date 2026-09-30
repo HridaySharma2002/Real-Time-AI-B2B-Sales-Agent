@@ -1,4 +1,4 @@
-package com.vintushtech.sales.model;
+package com.apexsales.sales.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
@@ -75,3 +75,4 @@ public class Lead {
     public Map<String, Object> getMetadata() { return metadata; }
     public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
 }
+

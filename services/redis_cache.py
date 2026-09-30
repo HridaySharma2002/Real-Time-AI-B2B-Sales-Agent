@@ -1,6 +1,6 @@
 """
 services/redis_cache.py - Low-Latency Redis Caching & In-Memory Fallback
-Part of VintushTech Real-Time AI B2B Sales Agent.
+Part of ApexSales AI Real-Time B2B Sales Agent.
 
 Features:
 - Sub-5ms caching for active call sessions, prospect persona classifications, and recent transcripts.

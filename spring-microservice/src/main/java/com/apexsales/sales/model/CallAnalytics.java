@@ -1,4 +1,4 @@
-package com.vintushtech.sales.model;
+package com.apexsales.sales.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
@@ -63,3 +63,4 @@ public class CallAnalytics {
     public Map<String, Object> getExtraMetrics() { return extraMetrics; }
     public void setExtraMetrics(Map<String, Object> extraMetrics) { this.extraMetrics = extraMetrics; }
 }
+

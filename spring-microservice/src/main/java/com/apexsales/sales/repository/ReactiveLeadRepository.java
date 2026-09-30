@@ -1,8 +1,8 @@
-package com.vintushtech.sales.repository;
+package com.apexsales.sales.repository;
 
-import com.vintushtech.sales.model.Lead;
-import com.vintushtech.sales.model.Interaction;
-import com.vintushtech.sales.model.CallAnalytics;
+import com.apexsales.sales.model.Lead;
+import com.apexsales.sales.model.Interaction;
+import com.apexsales.sales.model.CallAnalytics;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -61,3 +61,4 @@ public class ReactiveLeadRepository {
         return Flux.fromIterable(analyticsList);
     }
 }
+
