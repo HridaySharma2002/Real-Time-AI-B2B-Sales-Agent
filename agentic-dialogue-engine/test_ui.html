@@ -996,14 +996,14 @@
 
     <div class="modal-field">
       <label>FastAPI Backend URL (HTTP/HTTPS):</label>
-      <input type="text" class="modal-input" id="serverUrlInput" placeholder="https://your-backend.onrender.com or http://localhost:8000" />
+      <input type="text" class="modal-input" id="serverUrlInput" placeholder="https://real-time-ai-b2b-sales-agent.onrender.com or http://localhost:8000" />
     </div>
 
     <div class="modal-field">
       <label>Quick Presets:</label>
       <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
         <button class="chip-btn" id="presetLocal">Localhost (8000)</button>
-        <button class="chip-btn" id="presetRender">Render Template</button>
+        <button class="chip-btn" id="presetRender">Live Render Server</button>
       </div>
     </div>
 
@@ -1026,10 +1026,11 @@
     return origin;
   }
 
+  // Clear stale cached URLs from previous iterations
   let savedServer = localStorage.getItem("apexsales_server_url");
-  if (savedServer && savedServer.includes(":3000")) {
-    savedServer = "http://localhost:8000";
-    localStorage.setItem("apexsales_server_url", savedServer);
+  if (savedServer && (savedServer.includes(":3000") || savedServer.includes("apexsales-backend.onrender.com"))) {
+    savedServer = null;
+    localStorage.removeItem("apexsales_server_url");
   }
   let backendServer = savedServer || resolveDefaultServer();
 
@@ -1666,7 +1667,7 @@
     serverUrlInput.value = "http://localhost:8000";
   });
   presetRender.addEventListener("click", () => {
-    serverUrlInput.value = "https://apexsales-backend.onrender.com";
+    serverUrlInput.value = "https://real-time-ai-b2b-sales-agent.onrender.com";
   });
 
   // Auto connect on load

@@ -60,20 +60,31 @@ class SalesRedisService:
         self._connect()
 
     def _connect(self):
+        import socket
+        try:
+            target_host = "127.0.0.1" if self.host == "localhost" else self.host
+            with socket.create_connection((target_host, self.port), timeout=0.5):
+                pass
+        except Exception:
+            logger.info(f"Redis server not running at {self.host}:{self.port}. Operating seamlessly on in-memory cache fallback.")
+            self._is_redis_live = False
+            return
+
         try:
             import redis
             self.client = redis.Redis(
                 host=self.host,
                 port=self.port,
                 password=self.password,
-                socket_timeout=1.5,
+                socket_timeout=1.0,
+                socket_connect_timeout=1.0,
                 decode_responses=True
             )
             self.client.ping()
             self._is_redis_live = True
             logger.info(f"Connected to Redis cache at {self.host}:{self.port}")
         except Exception as e:
-            logger.warning(f"Redis not reachable at {self.host}:{self.port} ({e}). Using high-performance in-memory cache fallback.")
+            logger.info(f"Redis not reachable at {self.host}:{self.port}. Using in-memory cache fallback.")
             self._is_redis_live = False
 
     def is_available(self) -> bool:

@@ -1,11 +1,12 @@
 services:
   - type: web
-    name: apexsales-ai-backend
+    name: real-time-ai-b2b-sales-agent
     env: python
     region: oregon
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: python -m uvicorn main:app --app-dir agentic-dialogue-engine --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9

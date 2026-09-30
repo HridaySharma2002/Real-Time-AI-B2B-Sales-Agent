@@ -87,18 +87,40 @@ class LeadCreateRequest(BaseModel):
 
 @app.get("/")
 def read_root(request: Request):
-    accept_header = request.headers.get("accept", "")
-    if "text/html" in accept_header:
-        html_file = os.path.join(os.path.dirname(__file__), "test_ui.html")
-        if os.path.exists(html_file):
-            with open(html_file, "r", encoding="utf-8") as f:
-                return HTMLResponse(content=f.read())
+    """Serves the Unified Interactive Sales Console Web UI."""
+    # Check frontend/index.html first (Unified Single-Deployment)
+    frontend_html = os.path.join(root_dir, "frontend", "index.html")
+    if os.path.exists(frontend_html):
+        with open(frontend_html, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    # Fallback to local test_ui.html
+    html_file = os.path.join(os.path.dirname(__file__), "test_ui.html")
+    if os.path.exists(html_file):
+        with open(html_file, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse("<h1>ApexSales AI Real-Time B2B Sales Agent</h1><p>Web UI file not found.</p>")
+
+
+@app.get("/test", response_class=HTMLResponse)
+def get_test_page(request: Request):
+    """Direct alias to the Interactive Sales Console Web UI."""
+    return read_root(request)
+
+
+@app.get("/healthz")
+@app.get("/api/health")
+def get_health_status():
+    """Health check endpoint for Render and infrastructure monitoring."""
+    db = get_mongo_service()
+    cache = get_redis_cache()
     return JSONResponse(content={
-        "status": "running",
+        "status": "healthy",
         "platform": "ApexSales AI Real-Time B2B Sales Agent",
         "version": "2.0.0",
+        "mongodb_connected": db.is_connected(),
+        "redis_connected": cache.is_available(),
         "endpoints": {
-            "sales_console_ui": "/test",
+            "sales_console_ui": "/",
             "audio_websocket": "/ws/audio",
             "text_chat_api": "/api/chat",
             "leads_api": "/api/leads",
@@ -107,15 +129,6 @@ def read_root(request: Request):
             "analytics_api": "/api/analytics"
         }
     })
-
-
-@app.get("/test", response_class=HTMLResponse)
-def get_test_page():
-    html_file = os.path.join(os.path.dirname(__file__), "test_ui.html")
-    if os.path.exists(html_file):
-        with open(html_file, "r", encoding="utf-8") as f:
-            return f.read()
-    return "<h1>Test UI file not found</h1>"
 
 
 @app.get("/sample-audio")
@@ -128,13 +141,15 @@ def get_sample_audio():
 
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
-    """Direct text chat endpoint running full LangGraph reasoning + TTS."""
-    result = agent_app.invoke({
-        "messages": [HumanMessage(content=req.message)],
-        "session_id": req.session_id,
-        "lead_id": req.lead_id
-    })
+    """Direct text chat endpoint running full LangGraph reasoning + TTS non-blocking."""
+    def _run_agent():
+        return agent_app.invoke({
+            "messages": [HumanMessage(content=req.message)],
+            "session_id": req.session_id,
+            "lead_id": req.lead_id
+        })
 
+    result = await asyncio.to_thread(_run_agent)
     reply_text = result["messages"][-1].content
     audio_base64 = None
 
@@ -142,8 +157,9 @@ async def chat_endpoint(req: ChatRequest):
         tts = _get_tts_agent()
         if tts:
             try:
-                wav_bytes = tts.synthesize_to_wav_bytes(reply_text)
-                audio_base64 = base64.b64encode(wav_bytes).decode("ascii")
+                wav_bytes = await asyncio.to_thread(tts.synthesize_to_wav_bytes, reply_text)
+                if wav_bytes:
+                    audio_base64 = base64.b64encode(wav_bytes).decode("ascii")
             except Exception as e:
                 logger.warning(f"Chat TTS synthesis error: {e}")
 
@@ -259,8 +275,10 @@ async def websocket_audio_endpoint(websocket: WebSocket):
         lead_id=lead_id
     )
     
+    stt_connected = False
     try:
         transcriber.connect()
+        stt_connected = True
         logger.info(f"AssemblyAI Transcriber connected for WebSocket session: {session_id}")
         await websocket.send_json({
             "type": "transcriber_ready",
@@ -268,22 +286,24 @@ async def websocket_audio_endpoint(websocket: WebSocket):
             "message": "AI Speech Recognizer Ready"
         })
     except Exception as e:
-        logger.error(f"Failed to connect AssemblyAI Transcriber: {e}")
+        logger.warning(f"AssemblyAI Transcriber unavailable ({e}). WebSocket remains active for text and playback.")
         await websocket.send_json({
-            "type": "error",
-            "message": f"STT Connection Error: {str(e)}"
+            "type": "stt_status",
+            "connected": False,
+            "message": "Real-time speech recognition is in standby. Text chat and sample audio remain operational."
         })
 
     try:
         while True:
             msg = await websocket.receive()
             if "bytes" in msg and msg["bytes"]:
-                transcriber.stream(msg["bytes"])
+                if stt_connected:
+                    transcriber.stream(msg["bytes"])
             elif "text" in msg and msg["text"]:
                 try:
                     import json
                     cmd = json.loads(msg["text"])
-                    if cmd.get("type") in ("end_turn", "silence"):
+                    if cmd.get("type") in ("end_turn", "silence") and stt_connected:
                         transcriber.stream(b"\x00" * 32000)
                 except Exception:
                     pass
@@ -294,5 +314,9 @@ async def websocket_audio_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket session error: {e}")
     finally:
-        transcriber.close()
+        if stt_connected:
+            try:
+                transcriber.close()
+            except Exception:
+                pass
         logger.info(f"Transcriber session closed: {session_id}")

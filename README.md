@@ -97,9 +97,10 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 *Runs on `http://127.0.0.1:8000`.*
 
 ### 4. Interactive Browser UI
-Open **[http://127.0.0.1:8000/test](http://127.0.0.1:8000/test)** in your browser:
-- Click **"Start Talking (Mic)"** to speak directly with the AI sales agent.
-- Or click **"Stream Sample Audio"** to run a simulated audio stream without a microphone.
+Open **[http://127.0.0.1:8000/](http://127.0.0.1:8000/)** or **[http://127.0.0.1:8000/test](http://127.0.0.1:8000/test)** in your browser:
+- Deployed Live on Render: **[https://real-time-ai-b2b-sales-agent.onrender.com/](https://real-time-ai-b2b-sales-agent.onrender.com/)**
+- Click **"Start Real-Time Call"** to speak directly with the AI sales agent via microphone.
+- Or click **"Test Sample Audio"** to run a simulated audio stream without a microphone.
 
 ### 5. Automated End-to-End WebSocket Test
 ```bash
