@@ -1,0 +1,88 @@
+[SECTION: PRODUCT_OVERVIEW]
+Title: Enterprise AI B2B Sales Agent Platform Overview
+Category: product_overview
+Content:
+ApexSales AI is an enterprise real-time AI B2B Sales Agent platform designed to automate inbound lead qualification, real-time voice & chat discovery calls, and instant demo booking. It integrates with Salesforce, HubSpot, and Slack. Key capabilities include sub-500ms voice conversational latency, dynamic RAG for instant objection handling, and automatic CRM note synchronization.
+
+[SECTION: PRODUCT_FEATURES]
+Title: Real-Time Voice and Conversational Latency
+Category: product_features
+Content:
+ApexSales AI achieves ultra-low conversational latency under 500 milliseconds using high-performance streaming STT (Speech-to-Text), streaming local/cloud LLMs (including Qwen and specialized sales models), and neural TTS synthesis. It sounds completely natural, handles turn-taking, and handles user interruptions seamlessly.
+
+[SECTION: PRICING]
+Title: Pricing Plans & Enterprise Tiers
+Category: pricing
+Content:
+ApexSales AI offers three tiers:
+1. Starter Plan: $499/month - Includes 1 AI sales agent, 1,000 voice minutes, standard CRM sync.
+2. Growth Plan: $1,499/month - Includes up to 5 AI sales agents, 5,000 voice minutes, custom RAG knowledge base, multi-language support, HubSpot & Salesforce integrations.
+3. Enterprise Custom: Starting at $3,500/month - Unlimited agents, dedicated sub-300ms voice pipelines, on-prem/private VPC Ollama deployment option, SOC2 compliance, custom CRM integrations, and dedicated account manager.
+Annual billing includes a 20% discount.
+
+[SECTION: OBJECTION_HANDLING]
+Title: Objection: Price is Too High / Budget Constraints
+Category: objection_handling
+Content:
+When a prospect says 'It's too expensive' or 'We don't have budget right now':
+1. Acknowledge and reframe to ROI: 'I completely understand budget is top of mind. Most of our clients see a 4x ROI within the first 60 days because the AI qualifies leads 24/7 without hiring additional SDRs.'
+2. Offer a proof of concept (POC) or starting pilot on the Starter/Growth plan.
+3. Highlight cost comparison: An in-house SDR costs $75k+/year; ApexSales handles 10x the call volume at a fraction of the cost.
+
+[SECTION: OBJECTION_HANDLING]
+Title: Objection: We Already Use Another Tool / Competitor Comparison
+Category: objection_handling
+Content:
+When a prospect mentions existing solutions (e.g., standard chatbots, Drift, or traditional dialers):
+1. Clarify the differentiator: 'Unlike static chatbots or slow IVRs, ApexSales operates with sub-500ms real-time voice latency and deep RAG context, meaning it can hold fluid phone conversations and answer complex technical sales questions instantly.'
+2. Offer side-by-side pilot comparison with zero setup downtime.
+
+[SECTION: OBJECTION_HANDLING]
+Title: Objection: Concerns About Security, Privacy & Data Compliance
+Category: objection_handling
+Content:
+When a prospect asks about data privacy or security:
+1. Highlight enterprise-grade security: SOC2 Type II certified, GDPR & HIPAA compliant.
+2. Private Deployment: Supports 100% air-gapped or private VPC local LLM deployment via Ollama/vLLM where customer data never leaves their infrastructure.
+3. Zero data retention agreements for enterprise clients.
+
+[SECTION: OBJECTION_HANDLING]
+Title: Objection: Send Me An Email / Not Ready To Talk
+Category: objection_handling
+Content:
+When a prospect says 'Just send me an email' or 'I don't have time right now':
+1. Respectful nudge: 'I'll certainly send that over! So I ensure I include only the most relevant figures, are you currently looking to improve lead response times or scale your sales outreach this quarter?'
+2. Propose a short 10-minute live interactive demo: 'I can show you a 5-minute live voice simulation tailored to your product catalog.'
+
+[SECTION: CLOSING_AND_CTA]
+Title: Call To Action & Demo Scheduling
+Category: closing_and_cta
+Content:
+Primary goal of discovery: Book a 15-minute tailored technical demo or pilot setup.
+Closing Script: 'Based on what you've shared about your sales pipeline goals, I'd love to show you a customized demo with your own sales scripts. How does this Thursday at 2 PM or Friday morning look for your team?'
+
+[SECTION: OBJECTION_HANDLING]
+Title: Automated Playbook: Flexible Enterprise ROI & Staged Onboarding
+Category: objection_handling
+Content:
+When a prospect drops off at pricing or claims high setup costs:
+1. Offer Staged Rollout: 'We offer a 30-day performance pilot at zero risk, where you only pay if the AI agent hits your qualified lead target.'
+2. Financial Justification: Emphasize that ApexSales costs less than $1.50 per live discovery conversation vs. $45+ with traditional outsourced SDRs.
+3. Flexible Monthly Option: Highlight our month-to-month starter tier with no annual commitment.
+
+[SECTION: OBJECTION_HANDLING]
+Title: Automated Playbook: Simplified Tech Stack & Zero-Code Setup
+Category: objection_handling
+Content:
+When a prospect hesitates on technical complexity or voice latency:
+1. Reassure Simplicity: 'You don't need an engineering team. ApexSales connects with Salesforce and HubSpot in under 5 minutes with our 1-click OAuth integration.'
+2. Live Latency Demo: Offer to dial their phone on the spot so they experience the sub-500ms voice speed live.
+
+[SECTION: OBJECTION_HANDLING]
+Title: Automated Playbook: Flexible Enterprise ROI & Staged Onboarding
+Category: objection_handling
+Content:
+When a prospect drops off at pricing or claims high setup costs:
+1. Offer Staged Rollout: 'We offer a 30-day performance pilot at zero risk, where you only pay if the AI agent hits your qualified lead target.'
+2. Financial Justification: Emphasize that ApexSales costs less than $1.50 per live discovery conversation vs. $45+ with traditional outsourced SDRs.
+3. Flexible Monthly Option: Highlight our month-to-month starter tier with no annual commitment.

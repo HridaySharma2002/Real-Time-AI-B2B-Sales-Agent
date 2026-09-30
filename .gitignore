@@ -8,6 +8,7 @@ __pycache__/
 venv/
 ENV/
 env/
+python_venv/
 
 # Environment files and credentials
 .env
@@ -21,3 +22,19 @@ env/
 # Operating system files
 Thumbs.db
 .DS_Store
+
+# Audio output files (generated at runtime)
+output_audio/
+*.wav
+*.mp3
+
+# Call history (generated at runtime)
+call_history.json
+
+# Java build outputs
+spring-microservice/target/
+spring-microservice/.gradle/
+spring-microservice/build/
+
+# Python cache
+*.pyc
