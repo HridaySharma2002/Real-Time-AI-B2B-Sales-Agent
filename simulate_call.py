@@ -27,6 +27,17 @@ from typing import Dict, Any, List
 from datetime import datetime
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Local imports
 from Rag import B2BSalesRAG
 import importlib.util
@@ -162,13 +173,13 @@ class LiveSalesCallSession:
     def start_call(self):
         """Starts interactive call simulator."""
         print("\n" + "=" * 80)
-        print("  📞 LIVE INBOUND SALES CALL SIMULATION (AI Sales Agent)")
+        print("  [CALL] LIVE INBOUND SALES CALL SIMULATION (AI Sales Agent)")
         print("=" * 80)
         print("Role: You are the Prospect / Client evaluating ApexSales AI.")
         print("Commands:")
-        print("  - Type your questions/objections naturally (e.g. 'It's too expensive', 'We use Drift')")
+        print("  - Type your questions/objections naturally (e.g. 'It\'s too expensive', 'We use Drift')")
         print("  - Type 'hangup' or 'bye' to drop off / cut the call")
-        print("  - Type 'book demo' or 'sounds great let's do it' to close successfully")
+        print("  - Type 'book demo' or 'sounds great let\'s do it' to close successfully")
         print("=" * 80 + "\n")
 
         self.call_start_time = time.time()
@@ -177,7 +188,7 @@ class LiveSalesCallSession:
         # AI Opening Line
         opening_line = (
             "Hi there! Thanks for connecting with ApexSales AI. This is Sarah. "
-            "I saw your team was exploring ways to scale inbound sales calls—what's your main priority this quarter?"
+            "I saw your team was exploring ways to scale inbound sales calls--what's your main priority this quarter?"
         )
         print(f"\n[Turn 0] AI Sales Rep (Sarah) > {opening_line}\n")
         if self.tts:
@@ -200,7 +211,7 @@ class LiveSalesCallSession:
                     self.drop_off_turn = turn_idx
                     self.demo_booked = False
                     self.final_reason = f"prospect_cut_call_on_{analysis['primary_friction_topic']}"
-                    print(f"\n⚠️  [CALL ENDED - Prospect Hung Up at Turn {turn_idx} | Tone: {analysis['sentiment']} | Friction: {analysis['primary_friction_topic']}]")
+                    print(f"\n[WARNING] [CALL ENDED - Prospect Hung Up at Turn {turn_idx} | Tone: {analysis['sentiment']} | Friction: {analysis['primary_friction_topic']}]")
                     break
 
                 if "book demo" in user_msg.lower() or "schedule" in user_msg.lower() or "thursday" in user_msg.lower() or "friday" in user_msg.lower():
@@ -235,7 +246,7 @@ class LiveSalesCallSession:
                 })
 
                 if self.demo_booked:
-                    print("🎉 [CALL SUCCESS - Demo Scheduled & BANT Qualified!]")
+                    print("[SUCCESS] [CALL SUCCESS - Demo Scheduled & BANT Qualified!]")
                     break
 
             except (KeyboardInterrupt, EOFError):
@@ -270,7 +281,7 @@ class LiveSalesCallSession:
     def _process_post_call_learning(self, call_record: Dict[str, Any]):
         """Runs K-Means re-clustering and autonomous RAG knowledge base self-healing."""
         print("\n" + "=" * 80)
-        print("  🧠 POST-CALL ML ANALYSIS & RAG CONTINUOUS LEARNING LOOP")
+        print("  [ML] POST-CALL ML ANALYSIS & RAG CONTINUOUS LEARNING LOOP")
         print("=" * 80)
 
         # 1. Append new call to database
@@ -278,7 +289,7 @@ class LiveSalesCallSession:
         new_row_df = pd.DataFrame([call_record])
         df_history = pd.concat([df_history, new_row_df], ignore_index=True)
         save_call_history(df_history)
-        print(f"✓ Saved call telemetry to '{CALL_HISTORY_FILE}' (Total calls tracked: {len(df_history)})")
+        print(f"[OK] Saved call telemetry to '{CALL_HISTORY_FILE}' (Total calls tracked: {len(df_history)})")
         print(f"  - Duration: {call_record['duration_sec']}s | Drop-off Turn: {call_record['drop_off_turn']}")
         print(f"  - Tone Sentiment: {call_record['sentiment_score']} | Primary Friction: {call_record['friction_topic']}")
         print(f"  - Demo Booked: {'YES' if call_record['demo_booked'] == 1 else 'NO'}")
@@ -292,7 +303,7 @@ class LiveSalesCallSession:
         assigned_cluster = int(df_clustered.iloc[-1]["cluster"])
         cluster_info = clustering.cluster_summary.get(assigned_cluster, {})
         
-        print(f"✓ New call classified into **Cluster {assigned_cluster}**:")
+        print(f"[OK] New call classified into **Cluster {assigned_cluster}**:")
         print(f"  - Diagnosis    : {cluster_info.get('diagnosis')}")
         print(f"  - Failure Rate : {cluster_info.get('failure_rate')}%")
         print(f"  - Dominant Pain: {cluster_info.get('dominant_topic')}")
@@ -305,14 +316,14 @@ class LiveSalesCallSession:
         updates = optimizer.optimize_knowledge_base(clustering.cluster_summary)
 
         if updates:
-            print("\n✨ [RAG AUTO-UPDATED] Successfully learned from call failure:")
+            print("\n[RAG AUTO-UPDATED] Successfully learned from call failure:")
             for update in updates:
-                print(f"  👉 {update}")
-            print("\n✓ 'Rag_Knowledge_base.txt' updated. Re-indexing FAISS vector store...")
+                print(f"  -> {update}")
+            print("\n[OK] 'Rag_Knowledge_base.txt' updated. Re-indexing FAISS vector store...")
             self.rag.load_knowledge_base_from_file(KB_FILE_PATH)
-            print("✓ FAISS Vector DB successfully re-indexed with new objection playbooks for future calls!")
+            print("[OK] FAISS Vector DB successfully re-indexed with new objection playbooks for future calls!")
         else:
-            print("\n✓ Knowledge base is already equipped for this scenario. No changes needed.")
+            print("\n[OK] Knowledge base is already equipped for this scenario. No changes needed.")
 
         print("=" * 80 + "\n")
 

@@ -13,8 +13,9 @@ class AgentState(TypedDict):
     persona: str
     rag_context: str
 
+groq_api_key = os.getenv("GROQ_API_KEY")
 model_name = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
-llm = ChatGroq(model=model_name, temperature=0)
+llm = ChatGroq(model=model_name, temperature=0, api_key=groq_api_key) if groq_api_key else None
 
 def retrieve_node(state: AgentState):
     # This will later connect to Tushar's Red Component
@@ -29,7 +30,13 @@ def generate_node(state: AgentState):
     Keep responses concise (1-2 sentences)."""
     
     messages = [SystemMessage(content=system_prompt)] + state["messages"]
-    response = llm.invoke(messages)
+    if llm:
+        response = llm.invoke(messages)
+    else:
+        from langchain_core.messages import AIMessage
+        response = AIMessage(
+            content="Hello! At VintushTech, our Full-Stack and AI solutions start at $2,500. How can we assist your business goals? (Note: Configure GROQ_API_KEY in .env for live LLM responses)"
+        )
     return {"messages": [response]}
 
 workflow = StateGraph(AgentState)

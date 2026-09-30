@@ -23,9 +23,70 @@ import numpy as np
 import pandas as pd
 from typing import List, Dict, Any, Tuple, Optional
 from dataclasses import dataclass
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import silhouette_score
+try:
+    from sklearn.cluster import KMeans
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.metrics import silhouette_score
+except Exception as _sk_err:
+    class StandardScaler:
+        def __init__(self):
+            self.mean_ = None
+            self.scale_ = None
+        def fit_transform(self, X):
+            arr = np.asarray(X, dtype=float)
+            self.mean_ = np.mean(arr, axis=0)
+            self.scale_ = np.std(arr, axis=0)
+            self.scale_[self.scale_ == 0] = 1.0
+            return (arr - self.mean_) / self.scale_
+        def transform(self, X):
+            arr = np.asarray(X, dtype=float)
+            return (arr - self.mean_) / self.scale_
+
+    class KMeans:
+        def __init__(self, n_clusters=4, random_state=42, n_init=10, max_iter=300):
+            self.n_clusters = n_clusters
+            self.random_state = random_state
+            self.n_init = n_init
+            self.max_iter = max_iter
+            self.cluster_centers_ = None
+            self.labels_ = None
+        def fit_predict(self, X):
+            arr = np.asarray(X, dtype=float)
+            n_samples = len(arr)
+            k = min(self.n_clusters, n_samples)
+            np.random.seed(self.random_state)
+            init_idx = np.random.choice(n_samples, k, replace=False)
+            centers = arr[init_idx].copy()
+            labels = np.zeros(n_samples, dtype=int)
+            for _ in range(self.max_iter):
+                dists = np.linalg.norm(arr[:, np.newaxis, :] - centers[np.newaxis, :, :], axis=2)
+                new_labels = np.argmin(dists, axis=1)
+                if np.array_equal(labels, new_labels):
+                    break
+                labels = new_labels
+                for ci in range(k):
+                    mask = (labels == ci)
+                    if np.any(mask):
+                        centers[ci] = np.mean(arr[mask], axis=0)
+            self.cluster_centers_ = centers
+            self.labels_ = labels
+            return labels
+
+    def silhouette_score(X, labels):
+        arr = np.asarray(X, dtype=float)
+        unique_labels = np.unique(labels)
+        if len(unique_labels) <= 1:
+            return 0.0
+        scores = []
+        for i in range(len(arr)):
+            same_cluster = arr[labels == labels[i]]
+            a_i = np.mean(np.linalg.norm(same_cluster - arr[i], axis=1)) if len(same_cluster) > 1 else 0.0
+            other_clusters = [arr[labels == cl] for cl in unique_labels if cl != labels[i] and np.any(labels == cl)]
+            b_i = min(np.mean(np.linalg.norm(cl_points - arr[i], axis=1)) for cl_points in other_clusters) if other_clusters else 0.0
+            denom = max(a_i, b_i)
+            scores.append((b_i - a_i) / denom if denom > 0 else 0.0)
+        return float(np.mean(scores))
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -326,11 +387,11 @@ def run_clustering_and_optimization():
     updates = optimizer.optimize_knowledge_base(analyzer.cluster_summary)
 
     if updates:
-        print("\n✓ Actions Taken to Fix Agent Failures in `Rag_Knowledge_base.txt`:")
+        print("\n[OK] Actions Taken to Fix Agent Failures in `Rag_Knowledge_base.txt`:")
         for update in updates:
             print(f"  + {update}")
     else:
-        print("\n✓ Knowledge base is already optimized for all identified friction points.")
+        print("\n[OK] Knowledge base is already optimized for all identified friction points.")
 
     print("\n" + "=" * 80)
     print("  Clustering & Continuous Improvement Analysis Complete!")

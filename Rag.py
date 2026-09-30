@@ -26,6 +26,17 @@ import numpy as np
 from typing import List, Dict, Any, Optional, Generator, Tuple
 from dataclasses import dataclass, field
 
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env if present
@@ -586,14 +597,14 @@ def interactive_cli():
     print("\n[1/2] Checking local Ollama connection...")
     status = agent.check_ollama_connection()
     if status["connected"]:
-        print(f"  ✓ Connected to Ollama at {agent.ollama_url}")
+        print(f"  [OK] Connected to Ollama at {agent.ollama_url}")
         if status["model_available"]:
-            print(f"  ✓ Model '{agent.model_name}' is available and ready!")
+            print(f"  [OK] Model '{agent.model_name}' is available and ready!")
         else:
             print(f"  ! Model '{agent.model_name}' was not detected in local models list: {status['available_models']}")
             print(f"    To pull the model, run: ollama pull {agent.model_name}")
     else:
-        print(f"  ✗ Ollama is not reachable ({status.get('error')}).")
+        print(f"  [X] Ollama is not reachable ({status.get('error')}).")
         print("    Please ensure Ollama is installed and running (`ollama serve`).")
 
     print(f"\n[2/2] Knowledge Base Loaded from '{os.path.basename(agent.kb_file)}': {len(agent.retriever.chunks)} chunks.")
