@@ -65,7 +65,8 @@ class ChromaRAGPipeline:
                 self.index_knowledge_base(self.kb_file)
             self._initialized = True
         except Exception as e:
-            logger.error(f"Error initializing ChromaDB: {e}", exc_info=True)
+            logger.error(f"Error initializing ChromaDB: {e}")
+            self.collection = None
             self._init_in_memory_fallback()
 
     def _init_in_memory_fallback(self):
@@ -177,7 +178,10 @@ class ChromaRAGPipeline:
                     })
                 return output
             except Exception as e:
-                logger.error(f"ChromaDB query error: {e}")
+                logger.error(f"ChromaDB query error: {e}. Switching to instant in-memory fallback.")
+                self.collection = None
+                if not getattr(self, "chunks_fallback", None):
+                    self._init_in_memory_fallback()
 
         # Fallback keyword match
         q_words = set(query_text.lower().split())

@@ -76,6 +76,10 @@ class SalesRedisService:
             logger.warning(f"Redis not reachable at {self.host}:{self.port} ({e}). Using high-performance in-memory cache fallback.")
             self._is_redis_live = False
 
+    def is_available(self) -> bool:
+        """Returns True if live Redis server is connected."""
+        return self._is_redis_live
+
     def get(self, key: str) -> Optional[str]:
         if self._is_redis_live:
             try:

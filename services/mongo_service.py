@@ -140,6 +140,8 @@ class MongoDBService:
         logger.info(f"Saved lead '{lead_id}' to local database.")
         return lead_id
 
+    upsert_lead = save_lead
+
     def record_interaction(self, lead_id: str, session_id: str, turn_data: Dict[str, Any]):
         """Records a conversational turn with sentiment and friction metrics."""
         record = {
