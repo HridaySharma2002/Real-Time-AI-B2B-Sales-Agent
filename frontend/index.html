@@ -1018,11 +1018,20 @@
   // =========================================================================
   // Config & State Management
   // =========================================================================
-  const DEFAULT_SERVER = window.location.origin.includes("localhost") || window.location.origin.includes("127.0.0.1")
-    ? window.location.origin
-    : window.location.origin;
+  function resolveDefaultServer() {
+    const origin = window.location.origin;
+    if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+      return "http://localhost:8000";
+    }
+    return origin;
+  }
 
-  let backendServer = localStorage.getItem("apexsales_server_url") || DEFAULT_SERVER;
+  let savedServer = localStorage.getItem("apexsales_server_url");
+  if (savedServer && savedServer.includes(":3000")) {
+    savedServer = "http://localhost:8000";
+    localStorage.setItem("apexsales_server_url", savedServer);
+  }
+  let backendServer = savedServer || resolveDefaultServer();
 
   let ws = null;
   let audioContext = null;
@@ -1260,8 +1269,8 @@
 
       ws.onerror = (e) => {
         dotWs.className = "status-dot";
-        textWs.textContent = "WebSocket: Error";
-        reject(e);
+        textWs.textContent = "WebSocket: Offline";
+        reject(new Error("Unable to connect to WebSocket server at: " + url));
       };
 
       ws.onclose = () => {
@@ -1378,18 +1387,63 @@
   // Microphone Stream & ScriptProcessor for 16kHz PCM
   // =========================================================================
   async function startCall() {
+    // 1. Ensure WebSocket is connected before trying to capture mic
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      dotWs.className = "status-dot pulse-red";
+      textWs.textContent = "WebSocket: Connecting...";
+      try {
+        await connectWebSocket();
+      } catch (wsErr) {
+        dotWs.className = "status-dot";
+        textWs.textContent = "WebSocket: Offline";
+        alert("Cannot connect to AI Sales Server at: " + backendServer + "\n\nPlease ensure the backend is running on port 8000, or click '⚙️' to configure the URL.");
+        return;
+      }
+    }
+
+    // 2. Check if browser supports mediaDevices / getUserMedia (requires localhost or HTTPS)
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Microphone Access Error:\nYour browser does not permit microphone access on this URL.\n\nBrowsers strictly require 'http://localhost' or 'https://' to allow microphone capture.\nPlease open http://localhost:8000/test or http://localhost:3000.");
+      return;
+    }
+
+    // 3. Initialize AudioContext
     try {
       if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
       if (audioContext.state === "suspended") await audioContext.resume();
+    } catch (ctxErr) {
+      console.warn("AudioContext init warning:", ctxErr);
+    }
 
-      if (!ws || ws.readyState !== WebSocket.OPEN) {
-        await connectWebSocket();
+    // 4. Request MediaStream with fallback
+    try {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
+      } catch (conErr) {
+        console.warn("Specific constraints rejected, falling back to basic audio capture:", conErr);
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       }
+    } catch (micErr) {
+      console.error("Microphone Access Error:", micErr);
+      let errorMsg = "Could not access microphone.";
+      if (micErr.name === "NotAllowedError" || micErr.name === "PermissionDeniedError") {
+        errorMsg = "Microphone Permission Denied:\nPlease click the lock or settings icon in your browser address bar and set Microphone to 'Allow'.";
+      } else if (micErr.name === "NotFoundError" || micErr.name === "DevicesNotFoundError") {
+        errorMsg = "No Microphone Detected:\nPlease connect a microphone or headset and try again.";
+      } else if (micErr.name === "NotReadableError" || micErr.name === "TrackStartError") {
+        errorMsg = "Microphone In Use:\nYour microphone is being used by another application (Zoom, Teams, etc.).";
+      } else {
+        errorMsg = "Microphone Access Error: " + (micErr.message || micErr.name || String(micErr));
+      }
+      alert(errorMsg);
+      stopCall();
+      return;
+    }
 
-      mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-      });
-
+    // 5. Connect stream & ScriptProcessor
+    try {
       audioInput = audioContext.createMediaStreamSource(mediaStream);
       initVisualizer(audioInput);
 
@@ -1436,7 +1490,8 @@
 
       startTimer();
     } catch (err) {
-      alert("Microphone Access Error: " + err.message);
+      console.error("Audio pipeline initialization error:", err);
+      alert("Audio Initialization Error: " + (err.message || err.name || String(err)));
       stopCall();
     }
   }
