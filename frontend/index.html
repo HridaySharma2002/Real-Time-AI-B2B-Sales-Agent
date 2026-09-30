@@ -1283,6 +1283,11 @@
   let activeUserBubble = null;
 
   function handleServerMessage(data) {
+    if (data.type === "transcriber_ready") {
+      dotWs.className = "status-dot active";
+      textWs.textContent = "WebSocket: Online & Ready";
+      return;
+    }
     if (data.type === "transcript") {
       if (!activeUserBubble) {
         activeUserBubble = document.createElement("div");
@@ -1337,6 +1342,39 @@
   }
 
   // =========================================================================
+  // Accurate 16kHz PCM Resampler
+  // =========================================================================
+  function downsampleTo16k(inputBuffer, sampleRate) {
+    if (sampleRate === 16000) {
+      const pcm16 = new Int16Array(inputBuffer.length);
+      for (let i = 0; i < inputBuffer.length; i++) {
+        let s = Math.max(-1, Math.min(1, inputBuffer[i]));
+        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return pcm16;
+    }
+    const ratio = sampleRate / 16000;
+    const newLength = Math.round(inputBuffer.length / ratio);
+    const result = new Int16Array(newLength);
+    let offsetResult = 0;
+    let offsetBuffer = 0;
+    while (offsetResult < newLength) {
+      const nextOffsetBuffer = Math.round((offsetResult + 1) * ratio);
+      let accum = 0, count = 0;
+      for (let i = offsetBuffer; i < nextOffsetBuffer && i < inputBuffer.length; i++) {
+        accum += inputBuffer[i];
+        count++;
+      }
+      const sample = count > 0 ? (accum / count) : 0;
+      const clamped = Math.max(-1, Math.min(1, sample));
+      result[offsetResult] = clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF;
+      offsetResult++;
+      offsetBuffer = nextOffsetBuffer;
+    }
+    return result;
+  }
+
+  // =========================================================================
   // Microphone Stream & ScriptProcessor for 16kHz PCM
   // =========================================================================
   async function startCall() {
@@ -1349,37 +1387,52 @@
       }
 
       mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, sampleRate: 16000, echoCancellation: true, noiseSuppression: true }
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
 
       audioInput = audioContext.createMediaStreamSource(mediaStream);
-      scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-
       initVisualizer(audioInput);
+
+      scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
 
       scriptProcessor.onaudioprocess = (e) => {
         if (!isCallActive || isMuted) return;
         const inputData = e.inputBuffer.getChannelData(0);
-        // Downsample/convert to Int16 PCM
-        const pcm16 = new Int16Array(inputData.length);
+
+        // Calculate speech energy RMS
+        let sum = 0;
         for (let i = 0; i < inputData.length; i++) {
-          let s = Math.max(-1, Math.min(1, inputData[i]));
-          pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          sum += Math.abs(inputData[i]);
         }
+        const rms = Math.sqrt(sum / inputData.length);
+        if (rms > 0.015) {
+          dotMic.className = "status-dot pulse-red";
+          textMic.textContent = "Mic: Speaking...";
+        } else {
+          dotMic.className = "status-dot active";
+          textMic.textContent = "Mic: Listening...";
+        }
+
+        // Accurately downsample from native hardware rate to 16,000Hz PCM
+        const pcm16 = downsampleTo16k(inputData, audioContext.sampleRate);
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(pcm16.buffer);
         }
       };
 
+      // Connect to zero-gain node to prevent microphone feedback loop into speaker
+      const muteGain = audioContext.createGain();
+      muteGain.gain.value = 0;
       audioInput.connect(scriptProcessor);
-      scriptProcessor.connect(audioContext.destination);
+      scriptProcessor.connect(muteGain);
+      muteGain.connect(audioContext.destination);
 
       isCallActive = true;
       btnStartCall.className = "btn-call-main active-call";
-      callBtnText.textContent = "End Voice Call";
+      callBtnText.textContent = "Done Speaking / Send";
       btnMuteToggle.disabled = false;
-      dotMic.className = "status-dot pulse-red";
-      textMic.textContent = "Mic: Live Recording";
+      dotMic.className = "status-dot active";
+      textMic.textContent = "Mic: Listening...";
 
       startTimer();
     } catch (err) {
@@ -1392,6 +1445,7 @@
     isCallActive = false;
     stopTimer();
 
+    // Stop mic hardware stream
     if (mediaStream) {
       mediaStream.getTracks().forEach(t => t.stop());
       mediaStream = null;
@@ -1404,16 +1458,18 @@
       audioInput.disconnect();
       audioInput = null;
     }
-    if (ws) {
-      ws.close();
-      ws = null;
+
+    // Send 1 second of silence to AssemblyAI to explicitly complete the turn
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(new Uint8Array(32000).buffer);
     }
 
+    // Keep WebSocket connected so incoming AI voice response is received!
     btnStartCall.className = "btn-call-main";
     callBtnText.textContent = "Start Real-Time Call";
     btnMuteToggle.disabled = true;
     dotMic.className = "status-dot";
-    textMic.textContent = "Mic: Idle";
+    textMic.textContent = "Mic: Processing AI...";
     if (animFrame) cancelAnimationFrame(animFrame);
   }
 

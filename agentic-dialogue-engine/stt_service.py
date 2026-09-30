@@ -67,6 +67,7 @@ class TranscriberService:
         self.client.on(RealTimeEvents.Turn, self._on_turn)
         self.client.on(RealTimeEvents.Error, self._on_error)
         self._connected = False
+        self._pending_buffer = bytearray()
 
     def _on_turn(self, client, event):
         if not event.transcript:
@@ -131,16 +132,37 @@ class TranscriberService:
     def _on_error(self, client, error):
         print(f"STT Error: {error}", flush=True)
 
-    def connect(self, sample_rate=None):
+    def connect(self, sample_rate=None, max_retries=3):
+        import time
         rate = sample_rate or self.sample_rate
-        self.client.connect(RealTimeParameters(sample_rate=rate))
-        self._connected = True
+        last_err = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                self.client.connect(RealTimeParameters(sample_rate=rate))
+                self._connected = True
+                logger.info(f"AssemblyAI connected successfully (attempt {attempt})")
+                if self._pending_buffer:
+                    logger.info(f"Flushing {len(self._pending_buffer)} bytes of queued audio to AssemblyAI")
+                    self.client.stream(bytes(self._pending_buffer))
+                    self._pending_buffer.clear()
+                return
+            except Exception as e:
+                last_err = e
+                logger.warning(f"AssemblyAI connect attempt {attempt}/{max_retries} failed: {e}")
+                if attempt < max_retries:
+                    time.sleep(1.0)
+        raise last_err
 
     def stream(self, data: bytes):
         if self._connected:
             self.client.stream(data)
+        else:
+            # Buffer audio up to 10 seconds (320,000 bytes) while connection is establishing
+            if len(self._pending_buffer) < 320000:
+                self._pending_buffer.extend(data)
 
     def disconnect(self, terminate: bool = True):
+        self._pending_buffer.clear()
         if self._connected:
             try:
                 self.client.disconnect(terminate=terminate)

@@ -262,6 +262,11 @@ async def websocket_audio_endpoint(websocket: WebSocket):
     try:
         transcriber.connect()
         logger.info(f"AssemblyAI Transcriber connected for WebSocket session: {session_id}")
+        await websocket.send_json({
+            "type": "transcriber_ready",
+            "session_id": session_id,
+            "message": "AI Speech Recognizer Ready"
+        })
     except Exception as e:
         logger.error(f"Failed to connect AssemblyAI Transcriber: {e}")
         await websocket.send_json({
@@ -271,8 +276,19 @@ async def websocket_audio_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            data = await websocket.receive_bytes()
-            transcriber.stream(data)
+            msg = await websocket.receive()
+            if "bytes" in msg and msg["bytes"]:
+                transcriber.stream(msg["bytes"])
+            elif "text" in msg and msg["text"]:
+                try:
+                    import json
+                    cmd = json.loads(msg["text"])
+                    if cmd.get("type") in ("end_turn", "silence"):
+                        transcriber.stream(b"\x00" * 32000)
+                except Exception:
+                    pass
+            elif msg.get("type") == "websocket.disconnect":
+                break
     except WebSocketDisconnect:
         logger.info(f"WebSocket client disconnected: {session_id}")
     except Exception as e:
