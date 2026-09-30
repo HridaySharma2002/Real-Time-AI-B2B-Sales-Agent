@@ -142,87 +142,84 @@ class ChatterboxTTSAgent:
         }
         logger.info(f"Voice cloned successfully from: {audio_path}")
 
-    def _synthesize_pcm_chunk(self, text: str, speed: float = 1.0) -> np.ndarray:
+    def synthesize_to_wav_bytes(self, text: str) -> bytes:
         """
-        Synthesizes speech audio array for a text segment.
-        Falls back smoothly to harmonic acoustic waveform synthesis if native GPU weights are loading.
+        Synthesizes human speech audio bytes using Edge-TTS neural models (Jenny/Guy),
+        with seamless fallback to Google Text-to-Speech (gTTS).
         """
         clean_text = text.strip()
         if not clean_text:
-            return np.zeros(int(self.sample_rate * 0.1), dtype=np.float32)
+            return b""
 
-        # Approximate speech duration: ~150-170 words per minute
-        word_count = len(clean_text.split())
-        duration = max(0.4, (word_count / 2.8) / speed)
-        num_samples = int(self.sample_rate * duration)
-        
-        # Base pitch frequencies for male/female voice persona
-        base_f = 210.0 if "female" in self.voice_preset else 135.0
-        
-        # Generate smooth harmonic speech cadence envelope
-        t = np.linspace(0, duration, num_samples, endpoint=False)
-        envelope = np.sin(np.pi * np.linspace(0, 1, num_samples)) ** 0.3
-        
-        # Harmonic overtone blend for clear speech resonance
-        waveform = (
-            0.50 * np.sin(2 * np.pi * base_f * t) +
-            0.25 * np.sin(2 * np.pi * base_f * 2 * t) +
-            0.15 * np.sin(2 * np.pi * base_f * 3 * t) +
-            0.10 * np.sin(2 * np.pi * base_f * 4 * t)
-        ) * envelope
-        
-        # Add subtle natural articulation modulation
-        mod = 1.0 + 0.15 * np.sin(2 * np.pi * 5.0 * t)
-        waveform = waveform * mod
-        
-        return waveform.astype(np.float32)
+        # 1. Edge-TTS Neural Voice Engine (High-Fidelity Studio Voices)
+        try:
+            import io
+            import asyncio
+            import concurrent.futures
+            import edge_tts
+
+            voice = "en-US-JennyNeural"
+            preset_lower = str(self.voice_preset).lower()
+            if "male" in preset_lower:
+                voice = "en-US-GuyNeural"
+            elif "technical" in preset_lower:
+                voice = "en-US-ChristopherNeural"
+
+            async def _edge_gen():
+                comm = edge_tts.Communicate(clean_text, voice)
+                buf = io.BytesIO()
+                async for chunk in comm.stream():
+                    if chunk["type"] == "audio":
+                        buf.write(chunk["data"])
+                return buf.getvalue()
+
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                        data = pool.submit(lambda: asyncio.run(_edge_gen())).result(timeout=6.0)
+                else:
+                    data = loop.run_until_complete(_edge_gen())
+            except RuntimeError:
+                data = asyncio.run(_edge_gen())
+
+            if data and len(data) > 500:
+                return data
+        except Exception as e:
+            logger.warning(f"Edge-TTS neural synthesis failed ({e}). Falling back to gTTS...")
+
+        # 2. Google Text-to-Speech (gTTS) Fallback
+        try:
+            import io
+            from gtts import gTTS
+
+            fp = io.BytesIO()
+            tts = gTTS(text=clean_text, lang="en")
+            tts.write_to_fp(fp)
+            data = fp.getvalue()
+            if data and len(data) > 500:
+                logger.info("Synthesized audio using gTTS fallback.")
+                return data
+        except Exception as e:
+            logger.warning(f"gTTS fallback failed ({e}).")
+
+        return b""
 
     def synthesize_to_file(self, text: str, output_filename: Optional[str] = None) -> str:
         """
-        Synthesizes text into a standard .wav audio file.
+        Synthesizes text into a standard audio file.
         """
         if not output_filename:
             timestamp = int(time.time())
-            output_filename = f"sales_response_{timestamp}.wav"
+            output_filename = f"sales_response_{timestamp}.mp3"
 
         out_path = self.output_dir / output_filename
-        waveform = self._synthesize_pcm_chunk(text, speed=self.current_voice_profile.get("speed", 1.0))
-
-        try:
-            import soundfile as sf
-            sf.write(str(out_path), waveform, self.sample_rate)
-        except Exception as e:
-            # Fallback simple WAV writer
-            self._write_wav_manual(str(out_path), waveform, self.sample_rate)
-
-        logger.info(f"Synthesized audio saved to: {out_path}")
+        audio_bytes = self.synthesize_to_wav_bytes(text)
+        if audio_bytes:
+            with open(out_path, "wb") as f:
+                f.write(audio_bytes)
+            logger.info(f"Synthesized neural audio saved to: {out_path}")
         return str(out_path)
-
-    def synthesize_to_wav_bytes(self, text: str) -> bytes:
-        """Synthesizes text directly into in-memory WAV bytes."""
-        import io
-        import wave
-        waveform = self._synthesize_pcm_chunk(text, speed=self.current_voice_profile.get("speed", 1.0))
-        audio_int16 = (waveform * 32767).astype(np.int16)
-        buf = io.BytesIO()
-        with wave.open(buf, "wb") as wav_file:
-            wav_file.setnchannels(1)
-            wav_file.setsampwidth(2)
-            wav_file.setframerate(self.sample_rate)
-            wav_file.writeframes(audio_int16.tobytes())
-        return buf.getvalue()
-
-    @staticmethod
-    def _write_wav_manual(filepath: str, audio_data: np.ndarray, sample_rate: int):
-        """Zero-dependency WAV file writer."""
-        import struct
-        import wave
-        audio_int16 = (audio_data * 32767).astype(np.int16)
-        with wave.open(filepath, "w") as wav_file:
-            wav_file.setnchannels(1)  # Mono
-            wav_file.setsampwidth(2)  # 16-bit
-            wav_file.setframerate(sample_rate)
-            wav_file.writeframes(audio_int16.tobytes())
 
     def stream_rag_speech(self, rag_agent: B2BSalesRAG, user_query: str) -> Generator[Dict[str, Any], None, None]:
         """

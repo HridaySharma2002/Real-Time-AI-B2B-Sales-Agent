@@ -423,8 +423,58 @@
       draw();
     }
 
-    // Playback incoming Base64 WAV from Kokoro/Chatterbox TTS using Web Audio API
-    async function playTTSAudio(base64Wav) {
+    // Playback incoming Base64 Audio with dual pipeline + Web Speech fallback
+    async function playTTSAudio(base64Audio, fallbackText) {
+      if (!base64Audio || base64Audio.length < 50) {
+        if (fallbackText) speakWithWebSpeech(fallbackText);
+        return;
+      }
+
+      speakerDot.className = "dot speaking";
+      speakerStatus.textContent = "Speaker: AI Talking";
+      isSpeaking = true;
+
+      // Method 1: HTML5 Audio element for natural MP3/WAV playback
+      try {
+        const audio = new Audio("data:audio/mp3;base64," + base64Audio);
+        
+        audio.onended = () => {
+          speakerDot.className = "dot connected";
+          speakerStatus.textContent = "Speaker: Ready";
+          isSpeaking = false;
+        };
+
+        audio.onerror = async (err) => {
+          console.warn("HTML5 audio playback error, attempting Web Audio decode:", err);
+          await playViaDecode(base64Audio, fallbackText);
+        };
+
+        // Try connecting to visualizer if AudioContext active
+        try {
+          if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (audioContext.state === "suspended") {
+            await audioContext.resume();
+          }
+          const source = audioContext.createMediaElementSource(audio);
+          setupVisualizer(source);
+          source.connect(audioContext.destination);
+        } catch (ctxErr) {
+          // Some browsers restrict MediaElementSource; direct playback still works
+        }
+
+        await audio.play();
+        return;
+      } catch (err) {
+        console.warn("Direct audio play exception, falling back to Web Audio decode:", err);
+      }
+
+      // Method 2: Web Audio API decodeAudioData
+      await playViaDecode(base64Audio, fallbackText);
+    }
+
+    async function playViaDecode(base64Audio, fallbackText) {
       try {
         if (!audioContext) {
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -433,11 +483,7 @@
           await audioContext.resume();
         }
 
-        speakerDot.className = "dot speaking";
-        speakerStatus.textContent = "Speaker: AI Talking";
-        isSpeaking = true;
-
-        const binaryString = atob(base64Wav);
+        const binaryString = atob(base64Audio);
         const len = binaryString.length;
         const bytes = new Uint8Array(len);
         for (let i = 0; i < len; i++) {
@@ -447,8 +493,6 @@
         const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
         const source = audioContext.createBufferSource();
         source.buffer = audioBuffer;
-
-        // Connect through visualizer to speaker
         setupVisualizer(source);
         source.connect(audioContext.destination);
 
@@ -459,11 +503,50 @@
         };
         source.start(0);
       } catch (e) {
-        console.error("Error playing TTS audio:", e);
-        speakerDot.className = "dot";
+        console.warn("Web Audio decoding failed, using browser Web Speech API fallback:", e);
+        if (fallbackText) {
+          speakWithWebSpeech(fallbackText);
+        } else {
+          speakerDot.className = "dot connected";
+          speakerStatus.textContent = "Speaker: Ready";
+          isSpeaking = false;
+        }
+      }
+    }
+
+    // High quality browser Web Speech API voice synthesis
+    function speakWithWebSpeech(text) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(v => 
+        v.lang.startsWith("en") && 
+        (v.name.includes("Natural") || v.name.includes("Jenny") || v.name.includes("Google") || v.name.includes("Samantha") || v.name.includes("Zira"))
+      ) || voices.find(v => v.lang.startsWith("en"));
+
+      if (preferredVoice) utterance.voice = preferredVoice;
+
+      speakerDot.className = "dot speaking";
+      speakerStatus.textContent = "Speaker: AI Talking";
+      isSpeaking = true;
+
+      utterance.onend = () => {
+        speakerDot.className = "dot connected";
         speakerStatus.textContent = "Speaker: Ready";
         isSpeaking = false;
-      }
+      };
+      utterance.onerror = () => {
+        speakerDot.className = "dot connected";
+        speakerStatus.textContent = "Speaker: Ready";
+        isSpeaking = false;
+      };
+
+      window.speechSynthesis.speak(utterance);
     }
 
     // WebSocket Management
@@ -539,9 +622,7 @@
         if (data.enrichment && data.enrichment.recommended_tier) metaTier.textContent = data.enrichment.recommended_tier;
 
         // Play TTS Voice
-        if (data.audio_base64) {
-          playTTSAudio(data.audio_base64);
-        }
+        playTTSAudio(data.audio_base64, data.text);
       }
     }
 

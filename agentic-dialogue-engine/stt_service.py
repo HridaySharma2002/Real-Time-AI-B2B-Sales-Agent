@@ -31,8 +31,14 @@ load_dotenv()
 logger = logging.getLogger("STTService")
 
 
+_cached_tts_agent = None
+
 def _get_tts_agent():
-    """Dynamically loads Chatterbox / Kokoro TTS agent."""
+    """Dynamically loads and caches Chatterbox / Edge-TTS agent."""
+    global _cached_tts_agent
+    if _cached_tts_agent is not None:
+        return _cached_tts_agent
+
     try:
         import importlib.util
         tts_file = os.path.join(root_dir, "chatterbox-tts.py")
@@ -40,7 +46,8 @@ def _get_tts_agent():
             spec = importlib.util.spec_from_file_location("chatterbox_tts", tts_file)
             mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
-            return mod.ChatterboxTTSAgent(voice_preset="consultative_rep_female")
+            _cached_tts_agent = mod.ChatterboxTTSAgent(voice_preset="consultative_rep_female")
+            return _cached_tts_agent
     except Exception as e:
         logger.warning(f"Error loading ChatterboxTTS: {e}")
     return None
