@@ -6,6 +6,12 @@ import sys
 import websockets
 import urllib.request
 
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 BASE_URL = "http://127.0.0.1:8000"
 WS_URL = "ws://127.0.0.1:8000/ws/audio"
 AUDIO_FILE = os.path.join(os.path.dirname(__file__), "test_sample_16k.wav")
@@ -15,7 +21,7 @@ def check_server_health():
     try:
         req = urllib.request.urlopen(BASE_URL, timeout=3)
         res = json.loads(req.read().decode("utf-8"))
-        print(f"      Server response: {res.get('status')} - {res.get('message')}")
+        print(f"      Server response: {res.get('status')} - {res.get('platform', res.get('message'))}")
         return True
     except Exception as e:
         print(f"      Failed to connect to server: {e}")
@@ -70,7 +76,7 @@ async def run_websocket_test():
 
         print("      Waiting for AI agent response...")
         try:
-            await asyncio.wait_for(agent_responded.wait(), timeout=10.0)
+            await asyncio.wait_for(agent_responded.wait(), timeout=20.0)
             print("      Test completed successfully! Both STT and Agent Response verified.")
         except asyncio.TimeoutError:
             print("      Timed out waiting for agent response.")

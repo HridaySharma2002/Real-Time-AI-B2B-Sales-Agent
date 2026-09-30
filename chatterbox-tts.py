@@ -198,6 +198,20 @@ class ChatterboxTTSAgent:
         logger.info(f"Synthesized audio saved to: {out_path}")
         return str(out_path)
 
+    def synthesize_to_wav_bytes(self, text: str) -> bytes:
+        """Synthesizes text directly into in-memory WAV bytes."""
+        import io
+        import wave
+        waveform = self._synthesize_pcm_chunk(text, speed=self.current_voice_profile.get("speed", 1.0))
+        audio_int16 = (waveform * 32767).astype(np.int16)
+        buf = io.BytesIO()
+        with wave.open(buf, "wb") as wav_file:
+            wav_file.setnchannels(1)
+            wav_file.setsampwidth(2)
+            wav_file.setframerate(self.sample_rate)
+            wav_file.writeframes(audio_int16.tobytes())
+        return buf.getvalue()
+
     @staticmethod
     def _write_wav_manual(filepath: str, audio_data: np.ndarray, sample_rate: int):
         """Zero-dependency WAV file writer."""

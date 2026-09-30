@@ -28,8 +28,10 @@ output_audio/
 *.wav
 *.mp3
 
-# Call history (generated at runtime)
+# Call history and local databases (generated at runtime)
 call_history.json
+.local_leads_db.json
+.chroma_db/
 
 # Java build outputs
 spring-microservice/target/
