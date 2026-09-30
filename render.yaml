@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: apexsales-ai-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn main:app --app-dir agentic-dialogue-engine --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ASSEMBLYAI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_USERNAME
+        sync: false
+      - key: MONGODB_PASSWORD
+        sync: false
+      - key: REDIS_HOST
+        value: localhost
+      - key: REDIS_PORT
+        value: "6379"
+      - key: SPRING_SERVICE_URL
+        value: "http://localhost:8080"

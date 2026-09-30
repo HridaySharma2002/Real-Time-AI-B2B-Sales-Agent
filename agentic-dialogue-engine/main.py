@@ -25,7 +25,7 @@ import base64
 import logging
 from typing import Dict, Any, Optional
 from pydantic import BaseModel
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 
@@ -86,8 +86,14 @@ class LeadCreateRequest(BaseModel):
 # =====================================================================
 
 @app.get("/")
-def read_root():
-    return {
+def read_root(request: Request):
+    accept_header = request.headers.get("accept", "")
+    if "text/html" in accept_header:
+        html_file = os.path.join(os.path.dirname(__file__), "test_ui.html")
+        if os.path.exists(html_file):
+            with open(html_file, "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read())
+    return JSONResponse(content={
         "status": "running",
         "platform": "ApexSales AI Real-Time B2B Sales Agent",
         "version": "2.0.0",
@@ -100,7 +106,7 @@ def read_root():
             "rag_query_api": "/api/rag/query",
             "analytics_api": "/api/analytics"
         }
-    }
+    })
 
 
 @app.get("/test", response_class=HTMLResponse)

@@ -36,3 +36,7 @@ pymongo
 httpx[http2]
 aiohttp
 python-dotenv
+edge-tts
+gtts
+certifi
+chromadb
