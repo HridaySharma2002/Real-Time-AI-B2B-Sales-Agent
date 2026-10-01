@@ -150,7 +150,7 @@ class MongoDBService:
             self._connected = False
 
     def _save_local_record(self, collection_name: str, record: Dict[str, Any]):
-        """Persists records locally if MongoDB Atlas is offline."""
+        """Persists records locally with robust upsert and deduplication."""
         data = {}
         if os.path.exists(LOCAL_LEADS_FILE):
             try:
@@ -159,11 +159,57 @@ class MongoDBService:
             except Exception:
                 data = {}
         items = data.get(collection_name, [])
-        items.append(record)
+
+        updated = False
+        if collection_name == "call_history":
+            rec_id = record.get("history_id")
+            rec_sess = record.get("session_id")
+            rec_email = (record.get("email") or "").strip().lower()
+            rec_phone = "".join(filter(str.isdigit, record.get("phone") or ""))
+            rec_name = (record.get("customer_name") or "").strip().lower()
+
+            for idx, existing in enumerate(items):
+                ex_id = existing.get("history_id")
+                ex_sess = existing.get("session_id")
+                ex_email = (existing.get("email") or "").strip().lower()
+                ex_phone = "".join(filter(str.isdigit, existing.get("phone") or ""))
+                ex_name = (existing.get("customer_name") or "").strip().lower()
+
+                match = False
+                if rec_id and ex_id and rec_id == ex_id:
+                    match = True
+                elif rec_sess and ex_sess and rec_sess == ex_sess:
+                    match = True
+                elif rec_phone and ex_phone and rec_phone == ex_phone and len(rec_phone) >= 3:
+                    match = True
+                elif rec_email and ex_email and rec_email == ex_email:
+                    match = True
+                elif rec_name and ex_name and rec_name == ex_name and rec_name not in ["valued customer", "and email", "test"]:
+                    match = True
+
+                if match:
+                    items[idx].update(record)
+                    items[idx]["history_id"] = ex_id or record.get("history_id")
+                    items[idx]["created_at"] = record.get("created_at") or items[idx].get("created_at")
+                    updated = True
+                    break
+        else:
+            key_field = "history_id" if "history_id" in record else "lead_id" if "lead_id" in record else None
+            if key_field:
+                for idx, existing in enumerate(items):
+                    if existing.get(key_field) == record.get(key_field):
+                        items[idx].update(record)
+                        updated = True
+                        break
+
+        if not updated:
+            items.append(record)
         data[collection_name] = items
         try:
-            with open(LOCAL_LEADS_FILE, "w", encoding="utf-8") as f:
+            tmp_file = f"{LOCAL_LEADS_FILE}.tmp"
+            with open(tmp_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, default=str)
+            os.replace(tmp_file, LOCAL_LEADS_FILE)
         except Exception as e:
             logger.error(f"Error saving local lead record: {e}")
 
@@ -273,6 +319,91 @@ class MongoDBService:
             except Exception:
                 pass
         return []
+
+    def save_call_history(self, history_data: Dict[str, Any]) -> str:
+        """Stores complete call/chat history and plan confirmation."""
+        record = dict(history_data)
+        record_id = record.get("history_id") or f"hist_{int(time.time())}"
+        record["history_id"] = record_id
+        record["created_at"] = datetime.utcnow().isoformat()
+
+        if self._connected and self.db is not None:
+            try:
+                self.db["call_history"].update_one(
+                    {"history_id": record_id},
+                    {"$set": record},
+                    upsert=True
+                )
+                return record_id
+            except Exception as e:
+                logger.warning(f"Error saving to Atlas call_history: {e}")
+
+        self._save_local_record("call_history", record)
+        return record_id
+
+    def lookup_call_history(self, query: str) -> List[Dict[str, Any]]:
+        """Searches call history and agreement records by phone number, email, or name with deduplication."""
+        clean_q = query.strip().lower()
+        results = []
+
+        if self._connected and self.db is not None:
+            try:
+                cursor = self.db["call_history"].find({
+                    "$or": [
+                        {"email": {"$regex": clean_q, "$options": "i"}},
+                        {"phone": {"$regex": clean_q, "$options": "i"}},
+                        {"customer_name": {"$regex": clean_q, "$options": "i"}}
+                    ]
+                }).sort("created_at", -1).limit(20)
+                for doc in cursor:
+                    doc["_id"] = str(doc.get("_id", ""))
+                    results.append(doc)
+            except Exception as e:
+                logger.warning(f"Error querying Atlas call_history: {e}")
+
+        # Local fallback search
+        if os.path.exists(LOCAL_LEADS_FILE):
+            try:
+                with open(LOCAL_LEADS_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                histories = data.get("call_history", [])
+                for h in reversed(histories):
+                    p = str(h.get("phone", "")).lower()
+                    e = str(h.get("email", "")).lower()
+                    n = str(h.get("customer_name", "")).lower()
+                    if clean_q in p or clean_q in e or clean_q in n:
+                        results.append(h)
+            except Exception as err:
+                logger.error(f"Error querying local call_history: {err}")
+
+        # Intelligent Deduplication: return only ONE latest record per customer contact
+        unique_results = []
+        seen_keys = set()
+        for rec in results:
+            name = (rec.get("customer_name") or "").strip().lower()
+            phone = "".join(filter(str.isdigit, rec.get("phone") or ""))
+            email = (rec.get("email") or "").strip().lower()
+
+            # Skip empty placeholder records
+            if not phone and not email and (not name or name in ["valued customer", "and email", "test"]):
+                continue
+
+            if phone and email:
+                dedup_key = f"{phone}_{email}"
+            elif phone:
+                dedup_key = f"{phone}"
+            elif email:
+                dedup_key = f"{email}"
+            else:
+                dedup_key = f"{name}"
+
+            if dedup_key in seen_keys:
+                continue
+            seen_keys.add(dedup_key)
+            unique_results.append(rec)
+
+        return unique_results
+
 
 
 # Global singleton

@@ -29,3 +29,4 @@ edge-tts
 gtts
 certifi
 chromadb
+reportlab

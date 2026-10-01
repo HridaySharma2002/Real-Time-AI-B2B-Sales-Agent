@@ -70,6 +70,9 @@ class TranscriberService:
         self.tts = _get_tts_agent()
         self._connected = False
         self._pending_buffer = bytearray()
+        self._debounce_timer = None
+        self._accumulated_transcript = ""
+        self._turn_lock = threading.Lock()
         self._init_client()
 
     def _init_client(self):
@@ -90,19 +93,67 @@ class TranscriberService:
         if not event.transcript:
             return
         
-        if self.on_transcript:
-            try:
-                self.on_transcript(event.transcript, event.end_of_turn)
-            except Exception as e:
-                logger.error(f"Error in on_transcript callback: {e}")
+        text = event.transcript.strip()
+        if not text:
+            return
 
-        if event.end_of_turn and event.transcript.strip():
-            # Process turn in a background daemon thread so AssemblyAI's client WebSocket loop is never blocked
-            threading.Thread(
-                target=self._process_turn_response,
-                args=(event.transcript,),
-                daemon=True
-            ).start()
+        with self._turn_lock:
+            from agent_workflow import clean_stt_transcript
+            # AssemblyAI event.transcript provides current turn hypothesis; clean stutters
+            cleaned = clean_stt_transcript(text)
+            self._accumulated_transcript = cleaned or text
+            current_text = self._accumulated_transcript
+
+            # Always stream current transcript to frontend with is_final=False so user sees active speech
+            if self.on_transcript:
+                try:
+                    self.on_transcript(current_text, False)
+                except Exception as e:
+                    logger.error(f"Error in on_transcript callback: {e}")
+
+            # Cancel any existing debounce timer since user is still actively speaking
+            if self._debounce_timer:
+                self._debounce_timer.cancel()
+                self._debounce_timer = None
+
+            # Listen carefully: if AssemblyAI detects potential turn end, debounce and verify completion
+            if event.end_of_turn:
+                words = current_text.lower().split()
+                last_word = words[-1] if words else ""
+                trailing_connectors = {
+                    "and", "or", "because", "so", "but", "with", "if", "uh", "um", 
+                    "like", "the", "a", "an", "to", "for", "that", "which", "then", "also"
+                }
+
+                # If user ended on a conjunction or hesitation, wait 1.4s, else wait 0.9s of true silence
+                delay = 1.4 if (last_word in trailing_connectors or len(words) < 2) else 0.9
+
+                def _finalize_turn():
+                    with self._turn_lock:
+                        from agent_workflow import clean_stt_transcript
+                        final_text = clean_stt_transcript(self._accumulated_transcript.strip())
+                        self._accumulated_transcript = ""
+                        self._debounce_timer = None
+
+                    if final_text:
+                        # Notify frontend that the speaker has genuinely finished their turn
+                        if self.on_transcript:
+                            try:
+                                self.on_transcript(final_text, True)
+                            except Exception as e:
+                                logger.error(f"Error sending final transcript: {e}")
+
+                        # Trigger LangGraph parallel reasoning in background thread
+                        threading.Thread(
+                            target=self._process_turn_response,
+                            args=(final_text,),
+                            daemon=True
+                        ).start()
+
+                self._debounce_timer = threading.Timer(delay, _finalize_turn)
+                self._debounce_timer.daemon = True
+                self._debounce_timer.start()
+
 
     def _process_turn_response(self, transcript: str):
         safe_user_transcript = transcript.encode("ascii", "replace").decode("ascii")
@@ -142,6 +193,7 @@ class TranscriberService:
             friction_topic = result.get("friction_topic", "general_discovery")
             rag_context = result.get("rag_context", "")
             enrichment = result.get("enrichment", {})
+            lead_info = result.get("lead_info", {})
 
             safe_agent_response = agent_response.encode("ascii", "replace").decode("ascii")
             print(f"[Agent Response]: {safe_agent_response}", flush=True)
@@ -157,7 +209,8 @@ class TranscriberService:
                     "cluster_id": cluster_id,
                     "friction_topic": friction_topic,
                     "rag_context": rag_context,
-                    "enrichment": enrichment
+                    "enrichment": enrichment,
+                    "lead_info": lead_info
                 })
 
             # 2. Synthesize server-side neural TTS in background without delaying text dialogue
@@ -195,12 +248,12 @@ class TranscriberService:
         for attempt in range(1, max_retries + 1):
             try:
                 self._init_client()
-                # Configure turn silence thresholds for low-latency voice detection
+                # Configure turn silence thresholds for patient, complete human listening
                 params = RealTimeParameters(
                     sample_rate=rate,
-                    min_turn_silence=500,
-                    max_turn_silence=1000,
-                    end_of_turn_confidence_threshold=0.4
+                    min_turn_silence=1000,
+                    max_turn_silence=2200,
+                    end_of_turn_confidence_threshold=0.6
                 )
                 self.client.connect(params)
                 self._connected = True
@@ -242,6 +295,11 @@ class TranscriberService:
 
     def disconnect(self, terminate: bool = True):
         self._pending_buffer.clear()
+        with self._turn_lock:
+            if self._debounce_timer:
+                self._debounce_timer.cancel()
+                self._debounce_timer = None
+            self._accumulated_transcript = ""
         if self._connected:
             try:
                 self.client.disconnect(terminate=terminate)
@@ -249,6 +307,7 @@ class TranscriberService:
                 logger.warning(f"Error disconnecting transcriber: {e}")
             finally:
                 self._connected = False
+
 
     def close(self):
         self.disconnect(terminate=True)

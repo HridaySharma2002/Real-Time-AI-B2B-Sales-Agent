@@ -27,9 +27,10 @@ app = mod.app
 
 if __name__ == "__main__":
     import uvicorn
+    reload_flag = os.getenv("UVICORN_RELOAD", "false").lower() == "true"
     print("\n" + "=" * 65)
     print("  🚀 Starting ApexSales AI Real-Time Voice Server...")
     print("  🌐 Web UI: http://localhost:8000")
     print("  📡 WebSocket: ws://localhost:8000/ws/audio")
     print("=" * 65 + "\n")
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
