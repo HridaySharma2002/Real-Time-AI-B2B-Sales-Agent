@@ -108,21 +108,32 @@ class TranscriberService:
         safe_user_transcript = transcript.encode("ascii", "replace").decode("ascii")
         print(f"[User Said]: {safe_user_transcript}", flush=True)
         try:
-            from agent_workflow import agent_app
-            from langchain_core.messages import HumanMessage
-            
-            # Invoke LangGraph Multi-Step Reasoning Agent
-            result = agent_app.invoke({
-                "messages": [HumanMessage(content=transcript)],
-                "session_id": self.session_id,
-                "lead_id": self.lead_id
-            })
-            
-            agent_msg = result["messages"][-1]
-            agent_response = getattr(agent_msg, "content", "")
-            if not agent_response or not str(agent_response).strip():
-                if hasattr(agent_msg, "additional_kwargs"):
-                    agent_response = agent_msg.additional_kwargs.get("reasoning_content", "")
+            from agent_workflow import stream_agent_turn
+
+            def handle_token(token: str):
+                if self.on_agent_response:
+                    self.on_agent_response({
+                        "type": "agent_stream_chunk",
+                        "token": token
+                    })
+
+            def handle_first_sentence(sentence: str):
+                if self.on_agent_response:
+                    self.on_agent_response({
+                        "type": "agent_first_sentence",
+                        "sentence": sentence
+                    })
+
+            # Run ultra-fast parallel reasoning + streaming generator
+            result = stream_agent_turn(
+                transcript=transcript,
+                session_id=self.session_id,
+                lead_id=self.lead_id,
+                on_token=handle_token,
+                on_first_sentence=handle_first_sentence
+            )
+
+            agent_response = result.get("reply", "")
             if not agent_response or not str(agent_response).strip():
                 agent_response = "We offer flexible Starter ($499/mo) and Enterprise ($3,500/mo) packages with sub-300ms SLA and CRM integrations. Would you be open to a 10-minute demo on Thursday?"
 
@@ -135,7 +146,7 @@ class TranscriberService:
             safe_agent_response = agent_response.encode("ascii", "replace").decode("ascii")
             print(f"[Agent Response]: {safe_agent_response}", flush=True)
 
-            # 1. IMMEDIATELY deliver text response to prospect so UI unblocks instantly and WebSpeech starts speaking
+            # 1. Deliver final structured response to prospect
             if self.on_agent_response:
                 self.on_agent_response({
                     "type": "agent_response",

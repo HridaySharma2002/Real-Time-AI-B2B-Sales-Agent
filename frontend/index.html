@@ -9,47 +9,51 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* Royal Light Mode Palette */
-      --bg-base: #f8fafc;
+      /* Royal Theme & WhatsApp Light Contrast */
+      --bg-base: #f0f4f9;
       --bg-surface: #ffffff;
-      --bg-surface-subtle: #f1f5f9;
-      --bg-royal-tint: #eff6ff;
+      --bg-surface-subtle: #f8fafc;
       --bg-royal-card: #f0f7ff;
+      --chat-feed-bg: #efeae2; /* Warm WhatsApp-style wallpaper tone */
 
       /* Royal Blue Accents */
       --royal-900: #0f172a;
       --royal-800: #1e3a8a;
       --royal-700: #1d4ed8;
-      --royal-600: #2563eb; /* Primary Edge Royal */
+      --royal-600: #2563eb;
       --royal-500: #3b82f6;
-      --royal-400: #60a5fa;
-      --royal-200: #bfdbfe;
       --royal-100: #dbeafe;
       --royal-50: #eff6ff;
 
-      /* Secondary & Accent Colors */
-      --indigo-600: #4f46e5;
+      /* WhatsApp Chat Bubble Tones */
+      --wa-user-bubble: #d9fdd3; /* WhatsApp User Green */
+      --wa-user-bubble-border: #c0ebba;
+      --wa-agent-bubble: #ffffff; /* WhatsApp Received White */
+      --wa-agent-bubble-border: #e2e8f0;
+      --wa-check-blue: #53bdeb;
+
+      /* Accents */
       --emerald-600: #059669;
+      --emerald-500: #10b981;
       --emerald-100: #d1fae5;
+      --emerald-50: #ecfdf5;
       --amber-600: #d97706;
       --amber-100: #fef3c7;
       --rose-600: #e11d48;
       --rose-100: #ffe4e6;
+      --indigo-600: #4f46e5;
 
-      /* Text Colors (High Contrast on Light) */
-      --text-main: #0f172a;
+      /* Text Colors */
+      --text-main: #111b21;
       --text-secondary: #475569;
       --text-muted: #64748b;
       --text-royal: #1d4ed8;
 
       /* Borders & Shadows */
       --border-light: #e2e8f0;
-      --border-royal: #cbd5e1;
-      --border-royal-focus: #93c5fd;
-      --shadow-sm: 0 1px 3px rgba(30, 58, 138, 0.05), 0 1px 2px rgba(30, 58, 138, 0.03);
-      --shadow-md: 0 4px 12px -2px rgba(30, 58, 138, 0.07), 0 2px 6px -2px rgba(30, 58, 138, 0.04);
-      --shadow-lg: 0 12px 30px -4px rgba(30, 58, 138, 0.10), 0 4px 10px -2px rgba(30, 58, 138, 0.05);
-      --shadow-royal-glow: 0 0 24px rgba(37, 99, 235, 0.22);
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 16px 36px -4px rgba(15, 23, 42, 0.12);
 
       --radius-sm: 8px;
       --radius-md: 14px;
@@ -65,35 +69,37 @@
     }
 
     body {
-      background: radial-gradient(120% 80% at 50% -10%, #e0e7ff 0%, #eff6ff 30%, #f8fafc 80%, #ffffff 100%);
+      background: radial-gradient(120% 80% at 50% -10%, #e2e8f0 0%, #eff6ff 35%, #f1f5f9 80%, #ffffff 100%);
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 1.25rem;
+      padding: 1rem;
       -webkit-font-smoothing: antialiased;
     }
 
     .app-wrapper {
-      max-width: 1200px;
+      max-width: 1320px;
       width: 100%;
+      height: calc(100vh - 2rem);
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 0.85rem;
     }
 
-    /* Top Navigation Bar */
+    /* Top Navigation Header */
     .top-nav {
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(16px);
       border: 1px solid var(--border-light);
-      border-radius: var(--radius-lg);
-      padding: 0.85rem 1.5rem;
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1.4rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
     }
 
     .brand-section {
@@ -103,57 +109,52 @@
     }
 
     .brand-logo-badge {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       border-radius: 12px;
       background: linear-gradient(135deg, var(--royal-600), var(--indigo-600));
       display: flex;
       align-items: center;
       justify-content: center;
       color: white;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
     }
 
     .brand-logo-badge svg {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
     }
 
     .brand-text h1 {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 800;
-      letter-spacing: -0.03em;
-      background: linear-gradient(135deg, var(--royal-800) 0%, var(--royal-600) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      line-height: 1.2;
+      color: var(--royal-900);
+      letter-spacing: -0.02em;
     }
 
     .brand-text p {
-      font-size: 0.76rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
       font-weight: 500;
-      letter-spacing: 0.01em;
     }
 
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.65rem;
     }
 
     .badge-pill {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 0.45rem;
-      padding: 0.4rem 0.85rem;
-      border-radius: var(--radius-full);
-      font-size: 0.8rem;
-      font-weight: 600;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      background: var(--bg-surface-subtle);
       border: 1px solid var(--border-light);
-      background: var(--bg-surface);
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 600;
       color: var(--text-secondary);
-      transition: all 0.2s ease;
     }
 
     .status-dot {
@@ -161,356 +162,421 @@
       height: 8px;
       border-radius: 50%;
       background: #94a3b8;
-      transition: background 0.3s ease;
-    }
-    .status-dot.active { background: var(--emerald-600); box-shadow: 0 0 10px rgba(5, 150, 105, 0.6); }
-    .status-dot.pulse-red { background: var(--rose-600); animation: pulseDot 1.2s infinite; }
-    .status-dot.speaking-pulse { background: var(--royal-600); animation: pulseDot 0.8s infinite; }
-
-    @keyframes pulseDot {
-      0% { transform: scale(0.95); opacity: 0.7; }
-      50% { transform: scale(1.3); opacity: 1; }
-      100% { transform: scale(0.95); opacity: 0.7; }
     }
 
-    .btn-settings {
-      background: var(--bg-surface);
+    .status-dot.active {
+      background: var(--emerald-500);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+
+    .status-dot.pulse-red {
+      background: var(--rose-600);
+      box-shadow: 0 0 8px rgba(225, 29, 72, 0.6);
+      animation: pulseAnim 1.2s infinite;
+    }
+
+    .status-dot.speaking-pulse {
+      background: var(--royal-600);
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.8);
+      animation: pulseAnim 0.8s infinite;
+    }
+
+    @keyframes pulseAnim {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.25); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.7; }
+    }
+
+    /* Human Specialist Support Button */
+    .btn-human-support {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-full);
+      padding: 0.45rem 1.1rem;
+      font-size: 0.82rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-human-support:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45);
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .btn-human-support .live-indicator {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #a7f3d0;
+      box-shadow: 0 0 6px #ffffff;
+      animation: pulseAnim 1.4s infinite;
+    }
+
+    /* Secondary Nav Buttons */
+    .btn-nav-action {
+      background: #ffffff;
       border: 1px solid var(--border-light);
       border-radius: var(--radius-full);
       padding: 0.45rem 0.95rem;
       font-size: 0.8rem;
       font-weight: 600;
-      color: var(--royal-700);
+      color: var(--royal-800);
       cursor: pointer;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      transition: all 0.2s;
+      transition: all 0.15s;
     }
-    .btn-settings:hover {
+
+    .btn-nav-action:hover {
       background: var(--royal-50);
       border-color: var(--royal-200);
+      color: var(--royal-700);
     }
 
-    /* Main Split Grid */
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 1.25rem;
-    }
-
-    @media (max-width: 960px) {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Main Console Area */
-    .console-panel {
+    /* =========================================================================
+       Full-Page Main Conversational Hub
+       ========================================================================= */
+    .main-chat-container {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    /* Hero Call Control Card */
-    .hero-call-card {
-      background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
-      border: 1px solid rgba(191, 219, 254, 0.7);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-light);
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
       box-shadow: var(--shadow-md);
-      position: relative;
       overflow: hidden;
+      min-height: 0;
     }
 
-    .hero-call-card::before {
-      content: '';
-      position: absolute;
-      top: -60px;
-      right: -60px;
-      width: 180px;
-      height: 180px;
-      background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, transparent 70%);
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
-    .call-meta-bar {
+    /* Embedded Call Control Hero Bar */
+    .call-control-bar {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: white;
+      padding: 0.85rem 1.4rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 1.25rem;
+      gap: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
     }
 
-    .agent-identity {
+    .call-agent-info {
       display: flex;
       align-items: center;
       gap: 0.75rem;
     }
 
-    .agent-avatar {
-      width: 46px;
-      height: 46px;
-      border-radius: var(--radius-full);
-      background: linear-gradient(135deg, var(--royal-600), #7c3aed);
+    .agent-avatar-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--royal-600), #818cf8);
       display: flex;
       align-items: center;
       justify-content: center;
+      font-weight: 800;
+      font-size: 1.15rem;
       color: white;
-      font-weight: 700;
-      font-size: 1.1rem;
-      border: 3px solid white;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.4);
     }
 
-    .agent-details h2 {
-      font-size: 1.05rem;
+    .agent-meta-text h2 {
+      font-size: 0.96rem;
       font-weight: 700;
-      color: var(--text-main);
       display: flex;
       align-items: center;
       gap: 0.45rem;
+      color: #ffffff;
     }
 
-    .verified-badge {
-      display: inline-flex;
-      color: var(--royal-600);
-      font-size: 0.9rem;
+    .agent-meta-text p {
+      font-size: 0.74rem;
+      color: #94a3b8;
     }
 
-    .agent-details p {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .call-timer {
-      background: white;
-      border: 1px solid var(--border-light);
-      padding: 0.35rem 0.85rem;
+    .agent-meta-text .online-pill {
+      font-size: 0.65rem;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 0.12rem 0.5rem;
       border-radius: var(--radius-full);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--royal-700);
+      font-weight: 700;
+    }
+
+    /* Waveform Canvas inside Bar */
+    .waveform-box {
+      flex: 1;
+      max-width: 320px;
+      height: 38px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
       display: flex;
       align-items: center;
-      gap: 0.4rem;
-      box-shadow: var(--shadow-sm);
     }
 
-    /* Waveform Canvas */
-    .waveform-wrapper {
-      background: #ffffff;
-      border: 1px solid var(--royal-200);
-      border-radius: var(--radius-md);
-      padding: 0.75rem 1rem;
-      margin-bottom: 1.35rem;
-      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
-    }
-
-    canvas#audioVisualizer {
+    .waveform-box canvas {
       width: 100%;
-      height: 70px;
-      display: block;
-      border-radius: 6px;
+      height: 100%;
     }
 
-    .call-action-buttons {
+    .call-actions-group {
       display: flex;
       align-items: center;
-      gap: 0.85rem;
-      flex-wrap: wrap;
+      gap: 0.65rem;
     }
 
-    .btn-call-main {
-      flex: 1.6;
-      min-width: 200px;
-      background: linear-gradient(135deg, var(--royal-600) 0%, var(--royal-700) 100%);
+    .call-timer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      color: #e2e8f0;
+    }
+
+    .btn-call-trigger {
+      background: linear-gradient(135deg, #10b981, #059669);
       color: white;
       border: none;
-      padding: 0.95rem 1.4rem;
-      border-radius: var(--radius-md);
-      font-size: 0.95rem;
+      border-radius: var(--radius-full);
+      padding: 0.55rem 1.35rem;
+      font-size: 0.85rem;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      gap: 0.45rem;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+      transition: all 0.2s;
     }
 
-    .btn-call-main:hover:not(:disabled) {
-      background: linear-gradient(135deg, var(--royal-500) 0%, var(--royal-600) 100%);
+    .btn-call-trigger:hover {
       transform: translateY(-1px);
-      box-shadow: var(--shadow-royal-glow);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.55);
     }
 
-    .btn-call-main.active-call {
-      background: linear-gradient(135deg, var(--rose-600) 0%, #be123c 100%);
-      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35);
+    .btn-call-trigger.end-call {
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4);
     }
 
-    .btn-secondary {
-      flex: 1;
-      min-width: 140px;
-      background: white;
-      border: 1px solid var(--border-light);
-      color: var(--text-main);
-      padding: 0.95rem 1.15rem;
-      border-radius: var(--radius-md);
-      font-size: 0.88rem;
+    .btn-tool-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #f1f5f9;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-full);
+      padding: 0.5rem 0.95rem;
+      font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      transition: all 0.2s;
-      box-shadow: var(--shadow-sm);
+      gap: 0.35rem;
+      transition: all 0.15s;
     }
 
-    .btn-secondary:hover:not(:disabled) {
-      background: var(--bg-surface-subtle);
-      border-color: var(--royal-200);
-      color: var(--royal-700);
+    .btn-tool-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.2);
     }
 
-    button:disabled {
-      opacity: 0.45;
+    .btn-tool-secondary:disabled {
+      opacity: 0.5;
       cursor: not-allowed;
-      transform: none !important;
     }
 
-    /* Live Dialogue Card */
-    .dialogue-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem 1.5rem;
-      box-shadow: var(--shadow-sm);
-      display: flex;
-      flex-direction: column;
-      min-height: 440px;
-    }
-
-    .card-header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-bottom: 0.85rem;
-      border-bottom: 1px solid var(--border-light);
-      margin-bottom: 1rem;
-    }
-
-    .card-header-row h3 {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-    }
-
-    .chat-feed-box {
+    /* =========================================================================
+       WhatsApp-Style Clean Conversation Feed
+       ========================================================================= */
+    .chat-scroll-area {
       flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      background: #f8fafc;
+      background-image: radial-gradient(#cbd5e1 0.75px, transparent 0.75px);
+      background-size: 16px 16px;
       display: flex;
       flex-direction: column;
-      gap: 0.9rem;
-      max-height: 380px;
-      overflow-y: auto;
-      padding-right: 0.4rem;
+      gap: 1.15rem;
+      min-height: 0;
     }
 
-    .chat-bubble {
-      padding: 0.95rem 1.15rem;
-      border-radius: var(--radius-md);
-      font-size: 0.92rem;
-      line-height: 1.55;
-      animation: fadeIn 0.25s ease-out;
-      position: relative;
+    /* Chat Bubbles: WhatsApp Left / Right Architecture */
+    .chat-row {
+      display: flex;
+      width: 100%;
+      animation: bubbleFadeIn 0.2s ease-out;
     }
 
-    @keyframes fadeIn {
+    @keyframes bubbleFadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .chat-bubble.user {
-      background: #f1f5f9;
-      border-left: 4px solid var(--royal-600);
+    .chat-row.user-row {
+      justify-content: flex-end;
+    }
+
+    .chat-row.agent-row {
+      justify-content: flex-start;
+    }
+
+    /* Prospect / User Bubble (RIGHT SIDE - WhatsApp Green) */
+    .chat-bubble-user {
+      max-width: 72%;
+      background: var(--wa-user-bubble);
       color: var(--text-main);
-      align-self: flex-start;
-      width: 100%;
+      padding: 0.85rem 1.15rem;
+      border-radius: 16px 16px 2px 16px;
+      border: 1px solid var(--wa-user-bubble-border);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      position: relative;
+      align-self: flex-end;
     }
 
-    .chat-bubble.agent {
-      background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
-      border: 1px solid #bfdbfe;
-      border-left: 4px solid var(--indigo-600);
-      color: #0f172a;
-      box-shadow: 0 3px 8px rgba(37, 99, 235, 0.04);
+    /* Agent / Sarah Bubble (LEFT SIDE - WhatsApp White/Royal) */
+    .chat-bubble-agent {
+      max-width: 72%;
+      background: var(--wa-agent-bubble);
+      color: var(--text-main);
+      padding: 0.95rem 1.25rem;
+      border-radius: 16px 16px 16px 2px;
+      border: 1px solid var(--wa-agent-bubble-border);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      position: relative;
       align-self: flex-start;
-      width: 100%;
     }
 
-    .bubble-author {
-      font-size: 0.74rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-bottom: 0.35rem;
+    .bubble-meta-header {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      justify-content: space-between;
+      gap: 0.8rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
     }
 
-    .bubble-author.user { color: var(--royal-700); }
-    .bubble-author.agent { color: var(--indigo-600); }
+    .bubble-meta-header.user {
+      color: #166534;
+    }
 
-    .bubble-time {
-      margin-left: auto;
-      font-size: 0.7rem;
+    .bubble-meta-header.agent {
+      color: var(--royal-700);
+    }
+
+    .bubble-time-stamp {
+      font-size: 0.68rem;
       color: var(--text-muted);
       font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .check-icon {
+      color: var(--wa-check-blue);
+      font-weight: 700;
+    }
+
+    .bubble-message-text {
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: #1e293b;
+      word-break: break-word;
     }
 
     .partial-transcript {
-      color: var(--text-muted);
+      color: #475569;
       font-style: italic;
     }
 
     .bubble-replay-btn {
-      margin-top: 0.5rem;
-      background: white;
+      margin-top: 0.65rem;
+      background: var(--bg-surface-subtle);
       border: 1px solid var(--border-light);
       border-radius: var(--radius-full);
-      padding: 0.25rem 0.65rem;
+      padding: 0.25rem 0.75rem;
       font-size: 0.74rem;
       font-weight: 600;
       color: var(--royal-700);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.35rem;
       transition: all 0.15s;
     }
+
     .bubble-replay-btn:hover {
       background: var(--royal-50);
       border-color: var(--royal-200);
     }
 
-    /* Prompt Suggestion Chips */
-    .quick-chips-row {
+    .bubble-tags-row {
       display: flex;
-      gap: 0.5rem;
-      overflow-x: auto;
-      padding: 0.65rem 0 0.35rem 0;
+      gap: 0.35rem;
       margin-top: 0.5rem;
+      flex-wrap: wrap;
     }
 
-    .chip-btn {
+    .bubble-tactic-tag {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+    }
+
+    /* Fast Typing / Streaming Indicator */
+    .typing-cursor {
+      display: inline-block;
+      width: 7px;
+      height: 14px;
+      background: var(--royal-600);
+      vertical-align: middle;
+      margin-left: 2px;
+      animation: blink 0.7s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Bottom Input Dock */
+    .chat-bottom-dock {
+      background: #ffffff;
+      border-top: 1px solid var(--border-light);
+      padding: 0.75rem 1.4rem 1rem 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .chips-suggestions-bar {
+      display: flex;
+      gap: 0.45rem;
+      overflow-x: auto;
+      padding-bottom: 0.65rem;
+    }
+
+    .chip-item-btn {
       background: var(--bg-surface-subtle);
       border: 1px solid var(--border-light);
       border-radius: var(--radius-full);
@@ -522,221 +588,358 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .chip-btn:hover {
+
+    .chip-item-btn:hover {
       background: var(--royal-100);
       border-color: var(--royal-400);
       color: var(--royal-900);
     }
 
-    /* Manual Text Input Bar */
-    .input-bar-container {
+    .chat-input-controls {
       display: flex;
-      gap: 0.6rem;
-      margin-top: 0.75rem;
+      align-items: center;
+      gap: 0.65rem;
     }
 
-    .text-input-field {
+    .chat-text-input {
       flex: 1;
       background: #ffffff;
       border: 1.5px solid var(--border-light);
       border-radius: var(--radius-md);
-      padding: 0.8rem 1.1rem;
+      padding: 0.8rem 1.15rem;
       font-size: 0.92rem;
       color: var(--text-main);
       outline: none;
-      transition: all 0.2s ease;
+      transition: all 0.2s;
     }
 
-    .text-input-field:focus {
+    .chat-text-input:focus {
       border-color: var(--royal-600);
       box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
     }
 
-    .btn-send {
+    .btn-dock-send {
       background: var(--royal-600);
       color: white;
       border: none;
       border-radius: var(--radius-md);
-      padding: 0 1.25rem;
-      font-weight: 600;
-      font-size: 0.9rem;
+      padding: 0 1.35rem;
+      height: 44px;
+      font-weight: 700;
+      font-size: 0.88rem;
       cursor: pointer;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 0.4rem;
       transition: all 0.2s;
     }
 
-    .btn-send:hover {
+    .btn-dock-send:hover {
       background: var(--royal-700);
     }
 
-    /* Right Telemetry & Intelligence Sidebar */
-    .telemetry-sidebar {
+    /* =========================================================================
+       Human Specialist Contact Modal
+       ========================================================================= */
+    .specialist-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    .specialist-modal-overlay.open {
       display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
     }
 
-    .telemetry-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-light);
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .specialist-card-modal {
+      background: #ffffff;
       border-radius: var(--radius-lg);
-      padding: 1.25rem 1.4rem;
-      box-shadow: var(--shadow-sm);
+      width: 90%;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-light);
+      animation: scalePop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .sidebar-section-title {
+    @keyframes scalePop {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .specialist-modal-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: white;
+      padding: 1.5rem 1.75rem;
+      position: relative;
+    }
+
+    .btn-close-specialist {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      color: white;
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .btn-close-specialist:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Real Person Profile Row */
+    .specialist-profile-top {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+
+    .specialist-avatar-img {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: white;
+      border: 3px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .specialist-avatar-img .online-dot {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 14px;
+      height: 14px;
+      background: #10b981;
+      border: 2.5px solid #ffffff;
+      border-radius: 50%;
+    }
+
+    .specialist-info-text h3 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .specialist-info-text .specialist-title {
+      font-size: 0.85rem;
+      color: #bfdbfe;
+      margin-top: 0.2rem;
+    }
+
+    /* Prominent Banner Tag */
+    .specialist-fast-tag {
+      margin-top: 1.1rem;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35));
+      border: 1px solid rgba(52, 211, 153, 0.5);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: #a7f3d0;
       font-size: 0.85rem;
       font-weight: 700;
+    }
+
+    .specialist-modal-body {
+      padding: 1.5rem 1.75rem;
+    }
+
+    .specialist-contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .contact-item-box {
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+    }
+
+    .contact-item-box .label {
+      font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+    }
+
+    .contact-item-box .value {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--royal-900);
+      text-decoration: none;
+    }
+
+    .contact-item-box .value a {
       color: var(--royal-700);
-      margin-bottom: 0.9rem;
+      text-decoration: none;
+    }
+
+    .contact-item-box .value a:hover {
+      text-decoration: underline;
+    }
+
+    /* Callback Form */
+    .callback-form-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.85rem;
       display: flex;
       align-items: center;
       gap: 0.45rem;
     }
 
-    .telemetry-metric-item {
+    .callback-field-group {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.6rem 0;
-      border-bottom: 1px solid var(--border-light);
-      font-size: 0.88rem;
+      flex-direction: column;
+      gap: 0.75rem;
     }
 
-    .telemetry-metric-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
     }
 
-    .metric-label {
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .metric-val {
-      font-weight: 700;
-      color: var(--text-main);
-      text-align: right;
-    }
-
-    .royal-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.22rem 0.65rem;
-      border-radius: var(--radius-full);
-      font-size: 0.76rem;
-      font-weight: 700;
-    }
-
-    .royal-badge.blue {
-      background: var(--royal-100);
-      color: var(--royal-700);
-      border: 1px solid var(--royal-200);
-    }
-    .royal-badge.amber {
-      background: var(--amber-100);
-      color: var(--amber-600);
-      border: 1px solid #fde68a;
-    }
-    .royal-badge.emerald {
-      background: var(--emerald-100);
-      color: var(--emerald-600);
-      border: 1px solid #a7f3d0;
-    }
-
-    /* Knowledge Base RAG Accordion */
-    .rag-snippet-card {
-      margin-top: 0.85rem;
-      background: var(--bg-royal-card);
-      border: 1px solid var(--royal-200);
-      border-radius: var(--radius-md);
-      padding: 0.85rem 1rem;
-    }
-
-    .rag-snippet-header {
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--royal-800);
-      margin-bottom: 0.4rem;
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-    }
-
-    .rag-snippet-content {
-      font-size: 0.82rem;
-      color: var(--text-secondary);
-      line-height: 1.45;
-      max-height: 120px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-    }
-
-    /* Tag Cloud */
-    .tag-cloud {
-      display: flex;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-      margin-top: 0.4rem;
-    }
-
-    .tech-tag {
-      background: #ffffff;
-      border: 1px solid var(--border-light);
-      padding: 0.18rem 0.5rem;
+    .callback-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
       border-radius: var(--radius-sm);
-      font-size: 0.74rem;
-      font-weight: 600;
-      color: var(--text-secondary);
+      border: 1.5px solid var(--border-light);
+      font-size: 0.88rem;
+      outline: none;
+      transition: all 0.2s;
     }
 
-    /* Settings Modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(6px);
-      display: none;
+    .callback-input:focus {
+      border-color: var(--royal-600);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .btn-submit-callback {
+      margin-top: 0.4rem;
+      background: linear-gradient(135deg, var(--emerald-600), #047857);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1.25rem;
+      font-weight: 800;
+      font-size: 0.92rem;
+      cursor: pointer;
+      display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      gap: 0.5rem;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
     }
 
-    .modal-overlay.open {
+    .btn-submit-callback:hover {
+      background: linear-gradient(135deg, #10b981, var(--emerald-600));
+      transform: translateY(-1px);
+    }
+
+    .callback-success-banner {
+      display: none;
+      background: var(--emerald-50);
+      border: 1.5px solid #a7f3d0;
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      color: #065f46;
+      font-size: 0.88rem;
+      margin-top: 0.85rem;
+      animation: bubbleFadeIn 0.2s ease;
+    }
+
+    /* =========================================================================
+       Slide-Over Drawer (Telemetry, Intelligence, RAG)
+       ========================================================================= */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: flex-end;
+      z-index: 1500;
+    }
+
+    .drawer-overlay.open {
       display: flex;
     }
 
-    .modal-card {
+    .slide-over-drawer {
       background: #ffffff;
-      border-radius: var(--radius-lg);
-      padding: 1.85rem;
-      max-width: 520px;
-      width: 90%;
-      box-shadow: var(--shadow-lg);
-      border: 1px solid var(--border-light);
-      animation: modalPop 0.2s ease-out;
+      width: 440px;
+      max-width: 90vw;
+      height: 100vh;
+      box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    @keyframes modalPop {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
     }
 
-    .modal-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: var(--text-main);
-      margin-bottom: 0.35rem;
+    .drawer-header {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--border-light);
       display: flex;
       align-items: center;
       justify-content: space-between;
+      background: var(--bg-surface-subtle);
     }
 
-    .btn-close-modal {
+    .drawer-header h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--royal-900);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-close-drawer {
       background: none;
       border: none;
       font-size: 1.3rem;
@@ -744,40 +947,100 @@
       color: var(--text-muted);
     }
 
-    .modal-field {
-      margin-top: 1.1rem;
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
     }
 
-    .modal-field label {
-      display: block;
-      font-size: 0.84rem;
+    .drawer-card {
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.15rem;
+    }
+
+    .drawer-card-title {
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--royal-700);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.85rem;
+    }
+
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+
+    .metric-label {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .metric-value {
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .tag-cloud {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-top: 0.4rem;
+    }
+
+    .tech-pill {
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
       font-weight: 600;
       color: var(--text-secondary);
-      margin-bottom: 0.4rem;
     }
 
-    .modal-input {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius-md);
-      border: 1.5px solid var(--border-light);
-      font-size: 0.9rem;
-      color: var(--text-main);
-      outline: none;
-    }
-    .modal-input:focus {
-      border-color: var(--royal-600);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    /* Settings Modal */
+    .settings-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
     }
 
-    .modal-actions {
+    .settings-modal-overlay.open {
       display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      margin-top: 1.6rem;
     }
 
-    /* Scrollbar */
+    .settings-card {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Scrollbars */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -787,7 +1050,7 @@
 <body>
 
 <div class="app-wrapper">
-  <!-- Top Navigation Header -->
+  <!-- Top Navigation Bar -->
   <header class="top-nav">
     <div class="brand-section">
       <div class="brand-logo-badge">
@@ -799,11 +1062,19 @@
       </div>
       <div class="brand-text">
         <h1>ApexSales AI</h1>
-        <p>Enterprise B2B Real-Time Speech Dialogue Engine</p>
+        <p>Enterprise B2B Real-Time Voice Sales Agent</p>
       </div>
     </div>
 
     <div class="nav-actions">
+      <!-- Human Specialist Contact Button -->
+      <button class="btn-human-support" id="btnOpenSpecialist">
+        <span class="live-indicator"></span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        Talk to Human Specialist
+      </button>
+
+      <!-- Status Pills -->
       <div class="badge-pill" id="badgeWs">
         <div class="status-dot" id="dotWs"></div>
         <span id="textWs">WebSocket: Connecting</span>
@@ -816,200 +1087,270 @@
         <div class="status-dot" id="dotSpeaker"></div>
         <span id="textSpeaker">Speaker: Ready</span>
       </div>
-      <button class="btn-settings" id="btnOpenSettings">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-        Cloud Server
+
+      <!-- Telemetry Drawer Toggle -->
+      <button class="btn-nav-action" id="btnOpenDrawer" title="View Real-Time Lead Telemetry & RAG Context">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        Telemetry
+      </button>
+
+      <!-- Settings Button -->
+      <button class="btn-nav-action" id="btnOpenSettings" title="Server Connection Settings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Server
       </button>
     </div>
   </header>
 
-  <!-- Main Dashboard Split View -->
-  <main class="dashboard-grid">
-    <!-- Left Column: Audio Controls & Live Feed -->
-    <section class="console-panel">
-      <!-- Call Control Hero Card -->
-      <div class="hero-call-card">
-        <div class="call-meta-bar">
-          <div class="agent-identity">
-            <div class="agent-avatar">S</div>
-            <div class="agent-details">
-              <h2>Sarah <span class="verified-badge">● Live AI</span></h2>
-              <p>Senior B2B Account Executive (Neural Voice)</p>
-            </div>
-          </div>
-          <div class="call-timer" id="callTimer">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <span id="timerDigits">00:00</span>
-          </div>
-        </div>
-
-        <!-- Waveform Visualizer -->
-        <div class="waveform-wrapper">
-          <canvas id="audioVisualizer"></canvas>
-        </div>
-
-        <!-- Control Buttons -->
-        <div class="call-action-buttons">
-          <button class="btn-call-main" id="btnStartCall">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-            <span id="callBtnText">Start Real-Time Call</span>
-          </button>
-          <button class="btn-secondary" id="btnSampleAudio">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-            Play Sample Audio
-          </button>
-          <button class="btn-secondary" id="btnMuteToggle" disabled>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-            Mute
-          </button>
+  <!-- Central Full-Page Conversational Hub -->
+  <main class="main-chat-container">
+    <!-- Embedded Call Control Hero Bar -->
+    <div class="call-control-bar">
+      <div class="call-agent-info">
+        <div class="agent-avatar-badge">S</div>
+        <div class="agent-meta-text">
+          <h2>Sarah <span class="online-pill">● Live AI AE</span></h2>
+          <p>Senior B2B Sales Representative (Real-Time Voice)</p>
         </div>
       </div>
 
-      <!-- Dialogue Card -->
-      <div class="dialogue-card">
-        <div class="card-header-row">
-          <h3>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            Live Conversation Transcript
-          </h3>
-          <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted);">AssemblyAI Streaming STT</span>
+      <!-- Real-time Audio Waveform Visualizer -->
+      <div class="waveform-box">
+        <canvas id="audioVisualizer"></canvas>
+      </div>
+
+      <!-- Call Action Controls -->
+      <div class="call-actions-group">
+        <div class="call-timer-badge" id="callTimer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span id="timerDigits">00:00</span>
         </div>
 
-        <div class="chat-feed-box" id="chatFeed">
-          <div class="chat-bubble agent">
-            <div class="bubble-author agent">
-              <span>Sarah (ApexSales AI)</span>
-              <span class="bubble-time">Just now</span>
-            </div>
-            Hello! I'm Sarah from ApexSales AI. We help high-growth B2B teams automate outbound pipelines with sub-300ms real-time voice agents. How can I assist your sales pipeline today?
+        <button class="btn-call-trigger" id="btnStartCall">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+          <span id="callBtnText">Start Real-Time Call</span>
+        </button>
+
+        <button class="btn-tool-secondary" id="btnSampleAudio">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          Sample
+        </button>
+
+        <button class="btn-tool-secondary" id="btnMuteToggle" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+          Mute
+        </button>
+      </div>
+    </div>
+
+    <!-- WhatsApp-Style Central Conversation Area -->
+    <div class="chat-scroll-area" id="chatFeed">
+      <!-- Welcome Message from Agent (LEFT SIDE) -->
+      <div class="chat-row agent-row">
+        <div class="chat-bubble-agent">
+          <div class="bubble-meta-header agent">
+            <span>Sarah (ApexSales AI)</span>
+            <span class="bubble-time-stamp">Just now</span>
+          </div>
+          <div class="bubble-message-text">
+            Hello! I'm Sarah from ApexSales AI. We help B2B organizations scale outbound customer engagement with real-time, sub-300ms conversational intelligence. What is your primary priority for inbound or outbound sales calls this quarter?
+          </div>
+          <div class="bubble-tags-row">
+            <span class="bubble-tactic-tag">Consultative Discovery</span>
+            <span class="bubble-tactic-tag">Sub-300ms Voice</span>
           </div>
         </div>
-
-        <!-- Interactive Quick Chips -->
-        <div class="quick-chips-row">
-          <button class="chip-btn" data-query="What pricing packages do you offer?">💼 Pricing Packages</button>
-          <button class="chip-btn" data-query="What CRM integrations do you support?">⚡ CRM Integrations</button>
-          <button class="chip-btn" data-query="Can we run a proof of concept pilot?">🚀 Pilot POC</button>
-          <button class="chip-btn" data-query="What is your uptime SLA and latency?">🔒 Enterprise SLA</button>
-        </div>
-
-        <!-- Input Bar -->
-        <div class="input-bar-container">
-          <input type="text" class="text-input-field" id="textInput" placeholder="Speak into mic or type your sales question here..." />
-          <button class="btn-send" id="btnSend">
-            <span>Send</span>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-          </button>
-        </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Right Column: Real-Time Telemetry & B2B Insights -->
-    <aside class="telemetry-sidebar">
-      <!-- K-Means Prospect Segmentation -->
-      <div class="telemetry-card">
-        <div class="sidebar-section-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7.5" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-          K-Means Lead Segmentation
-        </div>
-
-        <div class="telemetry-metric-item">
-          <span class="metric-label">Persona Cluster:</span>
-          <span class="royal-badge blue" id="metaPersona">Enterprise Champion</span>
-        </div>
-
-        <div class="telemetry-metric-item">
-          <span class="metric-label">Detected Friction:</span>
-          <span class="royal-badge amber" id="metaFriction">Pricing Discovery</span>
-        </div>
-
-        <div class="telemetry-metric-item">
-          <span class="metric-label">Recommended Tier:</span>
-          <span class="royal-badge emerald" id="metaTier">Enterprise Custom ($3,500/mo)</span>
-        </div>
-
-        <div class="telemetry-metric-item">
-          <span class="metric-label">Target Organization:</span>
-          <span class="metric-val" id="metaCompany">Inbound Prospect</span>
-        </div>
+    <!-- Bottom Input & Suggestions Dock -->
+    <div class="chat-bottom-dock">
+      <!-- Quick Prompt Suggestion Chips -->
+      <div class="chips-suggestions-bar">
+        <button class="chip-item-btn" data-query="What pricing packages do you offer?">💼 Pricing Packages</button>
+        <button class="chip-item-btn" data-query="What CRM integrations do you support?">⚡ CRM Integrations</button>
+        <button class="chip-item-btn" data-query="Can we run a proof of concept pilot?">🚀 Pilot POC</button>
+        <button class="chip-item-btn" data-query="What is your uptime SLA and latency?">🔒 Enterprise SLA</button>
+        <button class="chip-item-btn" id="chipSpeakHuman" style="border-color: #a7f3d0; background: #ecfdf5; color: #047857;">👤 Connect with Real Specialist</button>
       </div>
 
-      <!-- Live B2B Firmographics -->
-      <div class="telemetry-card">
-        <div class="sidebar-section-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-          Enriched B2B Intel
-        </div>
-
-        <div class="telemetry-metric-item">
-          <span class="metric-label">Revenue Estimate:</span>
-          <span class="metric-val">$10M - $50M ARR</span>
-        </div>
-
-        <div class="telemetry-metric-item">
-          <span class="metric-label">Detected CRM Stack:</span>
-          <div class="tag-cloud" id="techStackCloud">
-            <span class="tech-tag">Salesforce</span>
-            <span class="tech-tag">HubSpot</span>
-            <span class="tech-tag">Zapier</span>
-          </div>
-        </div>
-
-        <div class="telemetry-metric-item">
-          <span class="metric-label">Voice SLA Target:</span>
-          <span class="metric-val" style="color: var(--emerald-600);">< 300ms Latency</span>
-        </div>
+      <!-- Text Input Controls -->
+      <div class="chat-input-controls">
+        <input type="text" class="chat-text-input" id="textInput" placeholder="Speak into your mic or type a message to Sarah..." />
+        <button class="btn-dock-send" id="btnSend">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          Send
+        </button>
       </div>
-
-      <!-- ChromaDB RAG Knowledge Drawer -->
-      <div class="telemetry-card">
-        <div class="sidebar-section-title">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-          Dynamic ChromaDB RAG
-        </div>
-
-        <div class="rag-snippet-card">
-          <div class="rag-snippet-header">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Active Knowledge Retrieval:
-          </div>
-          <div class="rag-snippet-content" id="ragSnippetText">Standard ApexSales AI B2B pricing: Starter ($499/mo, 1 agent), Growth ($1,499/mo, 5 agents), Enterprise Custom ($3,500/mo, unlimited agents, dedicated account manager, sub-300ms voice pipeline).</div>
-        </div>
-      </div>
-    </aside>
+    </div>
   </main>
 </div>
 
-<!-- Render / Netlify Backend Settings Modal -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="modal-card">
-    <div class="modal-title">
-      <span>⚙️ Cloud Server Connection</span>
-      <button class="btn-close-modal" id="btnCloseSettings">&times;</button>
-    </div>
-    <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">
-      Configure your deployed FastAPI backend URL on <strong>Render</strong>, <strong>Railway</strong>, or <strong>Localhost</strong>.
-    </p>
+<!-- =========================================================================
+     Human Specialist Support Modal (Real Person Contact & Instant Callback)
+     ========================================================================= -->
+<div class="specialist-modal-overlay" id="specialistModal">
+  <div class="specialist-card-modal">
+    <div class="specialist-modal-header">
+      <button class="btn-close-specialist" id="btnCloseSpecialist">&times;</button>
+      <div class="specialist-profile-top">
+        <div class="specialist-avatar-img">
+          MV
+          <div class="online-dot"></div>
+        </div>
+        <div class="specialist-info-text">
+          <h3>Marcus Vance <span style="font-size: 0.75rem; background: #10b981; color: white; padding: 0.15rem 0.6rem; border-radius: 9999px;">● Online Now</span></h3>
+          <div class="specialist-title">Senior Enterprise Director & Technical Sales Lead</div>
+          <div style="font-size: 0.78rem; color: #e2e8f0; margin-top: 0.2rem;">ApexSales Global Solutions Team</div>
+        </div>
+      </div>
 
-    <div class="modal-field">
-      <label>FastAPI Backend URL (HTTP/HTTPS):</label>
-      <input type="text" class="modal-input" id="serverUrlInput" placeholder="https://real-time-ai-b2b-sales-agent.onrender.com or http://localhost:8000" />
-    </div>
-
-    <div class="modal-field">
-      <label>Quick Presets:</label>
-      <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
-        <button class="chip-btn" id="presetLocal">Localhost (8000)</button>
-        <button class="chip-btn" id="presetRender">Live Render Server</button>
+      <!-- Prominent Contact Tag -->
+      <div class="specialist-fast-tag">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span>WE WILL CONTACT YOU VERY SOON! Specialist is on active duty.</span>
       </div>
     </div>
 
-    <div class="modal-actions">
-      <button class="btn-secondary" id="btnCancelSettings">Cancel</button>
-      <button class="btn-call-main" style="flex: none; min-width: 120px;" id="btnSaveSettings">Save & Connect</button>
+    <div class="specialist-modal-body">
+      <!-- Specialist Contact Credentials -->
+      <div class="specialist-contact-grid">
+        <div class="contact-item-box">
+          <div class="label">Location & HQ</div>
+          <div class="value">📍 San Francisco, CA / London, UK</div>
+        </div>
+        <div class="contact-item-box">
+          <div class="label">Direct Phone Line</div>
+          <div class="value"><a href="tel:+18885552739">📞 +1 (888) 555-APEX</a> (Ext. 402)</div>
+        </div>
+        <div class="contact-item-box">
+          <div class="label">Direct Email</div>
+          <div class="value"><a href="mailto:marcus.vance@apexsales.ai">✉️ marcus.vance@apexsales.ai</a></div>
+        </div>
+        <div class="contact-item-box">
+          <div class="label">Hours & Availability</div>
+          <div class="value">🕒 Mon–Fri, 8 AM–7 PM EST</div>
+        </div>
+      </div>
+
+      <!-- Priority Instant Callback Form -->
+      <div class="callback-form-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+        Request Priority Live Callback from Marcus
+      </div>
+
+      <form id="callbackForm" onsubmit="event.preventDefault(); submitHumanCallback();">
+        <div class="callback-field-group">
+          <div class="form-row-2">
+            <input type="text" class="callback-input" id="leadName" placeholder="Your Name" required />
+            <input type="text" class="callback-input" id="leadCompany" placeholder="Company Name" required />
+          </div>
+          <div class="form-row-2">
+            <input type="tel" class="callback-input" id="leadPhone" placeholder="Phone Number (e.g. +1...)" required />
+            <input type="email" class="callback-input" id="leadEmail" placeholder="Work Email" required />
+          </div>
+          <input type="text" class="callback-input" id="leadNotes" placeholder="What would you like to discuss? (e.g., Enterprise Custom Pilot)" />
+          <button type="submit" class="btn-submit-callback" id="btnCallbackSubmit">
+            ⚡ Request Immediate Callback
+          </button>
+        </div>
+      </form>
+
+      <div class="callback-success-banner" id="callbackSuccessBanner">
+        <strong>✅ Callback Dispatched!</strong> Marcus Vance has received your priority alert. We will contact you at your provided phone number very shortly!
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     Slide-Over Telemetry & Intelligence Drawer
+     ========================================================================= -->
+<div class="drawer-overlay" id="drawerOverlay">
+  <div class="slide-over-drawer">
+    <div class="drawer-header">
+      <h3>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 20V10M12 20V4M6 20v-6"></path></svg>
+        Real-Time Telemetry & Intelligence
+      </h3>
+      <button class="btn-close-drawer" id="btnCloseDrawer">&times;</button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Persona Classification Card -->
+      <div class="drawer-card">
+        <div class="drawer-card-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+          K-Means Persona Segmentation
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Identified Persona:</span>
+          <span class="metric-value" id="metaPersona" style="color: var(--royal-700);">Evaluating...</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Friction Topic:</span>
+          <span class="metric-value" id="metaFriction">Discovery</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Recommended Tier:</span>
+          <span class="metric-value" id="metaTier">Starter ($499/mo)</span>
+        </div>
+      </div>
+
+      <!-- Firmographic Intelligence Card -->
+      <div class="drawer-card">
+        <div class="drawer-card-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 21h18M3 7v14M21 7v14M9 21V3h6v18"></path></svg>
+          Prospect Firmographics
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Identified Company:</span>
+          <span class="metric-value" id="metaCompany">Prospect Org</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Detected Tech Stack:</span>
+          <div class="tag-cloud" id="techStackCloud">
+            <span class="tech-pill">Salesforce</span>
+            <span class="tech-pill">HubSpot</span>
+            <span class="tech-pill">Twilio</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ChromaDB Dynamic RAG Knowledge Snippet -->
+      <div class="drawer-card">
+        <div class="drawer-card-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          Retrieved Knowledge Chunks
+        </div>
+        <div id="ragSnippetText" style="font-size: 0.8rem; color: #475569; line-height: 1.45; max-height: 160px; overflow-y: auto; white-space: pre-wrap;">
+Standard ApexSales AI B2B Sales packages starting at $499/mo (Starter) to $3,500/mo (Enterprise Custom) with sub-300ms SLA.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     Server Settings Modal
+     ========================================================================= -->
+<div class="settings-modal-overlay" id="settingsModal">
+  <div class="settings-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h3 style="font-size: 1.1rem; font-weight: 800;">Cloud Server Configuration</h3>
+      <button style="background: none; border: none; font-size: 1.3rem; cursor: pointer;" id="btnCloseSettings">&times;</button>
+    </div>
+    <div style="margin-bottom: 1rem;">
+      <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem;">Backend Server URL:</label>
+      <input type="text" class="callback-input" id="serverUrlInput" placeholder="http://localhost:8000" />
+    </div>
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem;">
+      <button class="chip-item-btn" id="presetLocal">Localhost (8000)</button>
+      <button class="chip-item-btn" id="presetRender">Live Cloud Server</button>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 0.6rem;">
+      <button class="btn-tool-secondary" style="color: #0f172a;" id="btnCancelSettings">Cancel</button>
+      <button class="btn-dock-send" id="btnSaveSettings">Save & Connect</button>
     </div>
   </div>
 </div>
@@ -1029,7 +1370,6 @@
     return origin;
   }
 
-  // Clear stale cached URLs from previous iterations
   let savedServer = localStorage.getItem("apexsales_server_url");
   if (savedServer && (savedServer.includes(":3000") || savedServer.includes("apexsales-backend.onrender.com"))) {
     savedServer = null;
@@ -1049,11 +1389,9 @@
   let callSeconds = 0;
   let analyser = null;
   let animFrame = null;
-  let userSpeakingInTurn = false;
-  let autoTurnTimer = null;
   let lastSpokeTime = 0;
 
-  // DOM Elements
+  // DOM References
   const dotWs = document.getElementById("dotWs");
   const textWs = document.getElementById("textWs");
   const dotMic = document.getElementById("dotMic");
@@ -1078,6 +1416,16 @@
   const ragSnippetText = document.getElementById("ragSnippetText");
   const techStackCloud = document.getElementById("techStackCloud");
 
+  // Modals & Drawers
+  const specialistModal = document.getElementById("specialistModal");
+  const btnOpenSpecialist = document.getElementById("btnOpenSpecialist");
+  const btnCloseSpecialist = document.getElementById("btnCloseSpecialist");
+  const chipSpeakHuman = document.getElementById("chipSpeakHuman");
+
+  const drawerOverlay = document.getElementById("drawerOverlay");
+  const btnOpenDrawer = document.getElementById("btnOpenDrawer");
+  const btnCloseDrawer = document.getElementById("btnCloseDrawer");
+
   const settingsModal = document.getElementById("settingsModal");
   const btnOpenSettings = document.getElementById("btnOpenSettings");
   const btnCloseSettings = document.getElementById("btnCloseSettings");
@@ -1090,7 +1438,6 @@
   const canvas = document.getElementById("audioVisualizer");
   const canvasCtx = canvas.getContext("2d");
 
-  // Format Helper
   function getWsUrl() {
     let clean = backendServer.replace(/\/+$/, "");
     if (clean.startsWith("https://")) return clean.replace("https://", "wss://") + "/ws/audio";
@@ -1105,7 +1452,7 @@
   }
 
   // =========================================================================
-  // Canvas Frequency Visualizer (Royal Edge Theme)
+  // Canvas Visualizer
   // =========================================================================
   function initVisualizer(sourceNode) {
     if (!audioContext) return;
@@ -1117,12 +1464,11 @@
     const dataArray = new Uint8Array(bufferLength);
 
     canvas.width = canvas.parentElement.clientWidth * 2;
-    canvas.height = 140;
+    canvas.height = 76;
 
     function renderFrame() {
       animFrame = requestAnimationFrame(renderFrame);
       analyser.getByteFrequencyData(dataArray);
-
       canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
       const barWidth = (canvas.width / bufferLength) * 1.8;
@@ -1132,81 +1478,57 @@
         const val = dataArray[i] / 255;
         const barHeight = val * canvas.height * 0.85;
 
-        // Gradient: Royal Blue to Cobalt
         const grad = canvasCtx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight);
         if (isSpeaking) {
-          grad.addColorStop(0, "#4f46e5");
-          grad.addColorStop(1, "#818cf8");
+          grad.addColorStop(0, "#10b981");
+          grad.addColorStop(1, "#34d399");
         } else {
-          grad.addColorStop(0, "#1d4ed8");
-          grad.addColorStop(1, "#38bdf8");
+          grad.addColorStop(0, "#2563eb");
+          grad.addColorStop(1, "#60a5fa");
         }
 
         canvasCtx.fillStyle = grad;
         canvasCtx.beginPath();
-        canvasCtx.roundRect(x, canvas.height - barHeight - 4, barWidth, barHeight + 4, 4);
+        canvasCtx.roundRect(x, canvas.height - barHeight - 2, barWidth, barHeight + 2, 3);
         canvasCtx.fill();
-
-        x += barWidth + 6;
+        x += barWidth + 4;
       }
     }
     renderFrame();
   }
 
   // =========================================================================
-  // Audio Playback (Neural Base64 + Fallback)
+  // Neural & WebSpeech Audio Playback
   // =========================================================================
   async function playTTSAudio(base64Audio, fallbackText) {
-    if (!base64Audio || base64Audio.length < 50) {
+    if (!base64Audio) {
       if (fallbackText) speakWithWebSpeech(fallbackText);
       return;
     }
 
-    dotSpeaker.className = "status-dot speaking-pulse";
-    textSpeaker.textContent = "Speaker: AI Talking";
-    isSpeaking = true;
-
     try {
-      const audio = new Audio("data:audio/mp3;base64," + base64Audio);
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
 
-      audio.onended = () => {
-        dotSpeaker.className = "status-dot active";
-        textSpeaker.textContent = "Speaker: Ready";
-        isSpeaking = false;
-      };
+      const binaryString = atob(base64Audio);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
 
-      audio.onerror = async () => {
-        await playViaDecode(base64Audio, fallbackText);
-      };
-
-      try {
-        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioContext.state === "suspended") await audioContext.resume();
-        const source = audioContext.createMediaElementSource(audio);
-        initVisualizer(source);
-        source.connect(audioContext.destination);
-      } catch (e) {}
-
-      await audio.play();
-    } catch (err) {
-      await playViaDecode(base64Audio, fallbackText);
-    }
-  }
-
-  async function playViaDecode(base64Audio, fallbackText) {
-    try {
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === "suspended") await audioContext.resume();
-
-      const binary = atob(base64Audio);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-
-      const buffer = await audioContext.decodeAudioData(bytes.buffer);
+      const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
       const source = audioContext.createBufferSource();
-      source.buffer = buffer;
-      initVisualizer(source);
+      source.buffer = audioBuffer;
       source.connect(audioContext.destination);
+
+      dotSpeaker.className = "status-dot speaking-pulse";
+      textSpeaker.textContent = "Speaker: Sarah Talking";
+      isSpeaking = true;
 
       source.onended = () => {
         dotSpeaker.className = "status-dot active";
@@ -1222,12 +1544,6 @@
         isSpeaking = false;
       }
     }
-  }
-
-  if (typeof window !== "undefined" && window.speechSynthesis) {
-    window.speechSynthesis.onvoiceschanged = () => {
-      window.speechSynthesis.getVoices();
-    };
   }
 
   function speakWithWebSpeech(text) {
@@ -1248,7 +1564,7 @@
     if (preferred) utter.voice = preferred;
 
     dotSpeaker.className = "status-dot speaking-pulse";
-    textSpeaker.textContent = "Speaker: AI Talking";
+    textSpeaker.textContent = "Speaker: Sarah Talking";
     isSpeaking = true;
 
     utter.onend = () => {
@@ -1266,7 +1582,7 @@
   }
 
   // =========================================================================
-  // WebSocket Client Connection
+  // WebSocket Client Connection & Real-Time Streaming
   // =========================================================================
   function connectWebSocket() {
     return new Promise((resolve, reject) => {
@@ -1308,87 +1624,157 @@
   }
 
   let activeUserBubble = null;
+  let activeAgentStreamingBubble = null;
 
   function handleServerMessage(data) {
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     if (data.type === "transcriber_ready") {
       dotWs.className = "status-dot active";
       textWs.textContent = "WebSocket: Online & Ready";
       return;
     }
+
+    // 1. Real-time Speech-to-Text transcript from Client (RIGHT SIDE WHATSAPP)
     if (data.type === "transcript") {
       if (!activeUserBubble) {
-        activeUserBubble = document.createElement("div");
-        activeUserBubble.className = "chat-bubble user";
-        activeUserBubble.innerHTML = `<div class="bubble-author user"><span>Prospect (You)</span><span class="bubble-time">Live</span></div><span class="partial-transcript"></span>`;
-        chatFeed.appendChild(activeUserBubble);
+        const row = document.createElement("div");
+        row.className = "chat-row user-row";
+        row.innerHTML = `
+          <div class="chat-bubble-user">
+            <div class="bubble-meta-header user">
+              <span>Prospect (You)</span>
+              <span class="bubble-time-stamp">${now} <span class="check-icon">✓✓</span></span>
+            </div>
+            <div class="bubble-message-text"><span class="partial-transcript">${data.text}</span></div>
+          </div>
+        `;
+        chatFeed.appendChild(row);
+        activeUserBubble = row.querySelector(".partial-transcript");
+      } else {
+        activeUserBubble.textContent = data.text;
       }
-      const textSpan = activeUserBubble.querySelector(".partial-transcript");
-      if (textSpan) {
-        textSpan.textContent = data.text;
-        if (data.is_final) {
-          textSpan.className = "";
-          activeUserBubble = null;
 
-          // Display active thinking indicator so user knows Sarah is processing
-          let thinkingBubble = document.getElementById("agentThinkingBubble");
-          if (!thinkingBubble) {
-            thinkingBubble = document.createElement("div");
-            thinkingBubble.id = "agentThinkingBubble";
-            thinkingBubble.className = "chat-bubble agent";
-            thinkingBubble.style.opacity = "0.75";
-            thinkingBubble.innerHTML = `
-              <div class="bubble-author agent"><span>Sarah (ApexSales AI)</span><span class="bubble-time">Processing...</span></div>
-              <div style="font-style: italic;">Thinking and checking sales playbooks...</div>
-            `;
-            chatFeed.appendChild(thinkingBubble);
-            chatFeed.scrollTop = chatFeed.scrollHeight;
-          }
+      if (data.is_final) {
+        if (activeUserBubble) {
+          activeUserBubble.className = "";
+          activeUserBubble = null;
+        }
+
+        // Show thinking indicator
+        let thinking = document.getElementById("agentThinkingIndicator");
+        if (!thinking) {
+          const tRow = document.createElement("div");
+          tRow.id = "agentThinkingIndicator";
+          tRow.className = "chat-row agent-row";
+          tRow.innerHTML = `
+            <div class="chat-bubble-agent" style="opacity: 0.8;">
+              <div class="bubble-meta-header agent">
+                <span>Sarah (ApexSales AI)</span>
+                <span class="bubble-time-stamp">Processing...</span>
+              </div>
+              <div class="bubble-message-text" style="font-style: italic; color: var(--text-muted);">
+                Analyzing sales playbooks and preparing response<span class="typing-cursor"></span>
+              </div>
+            </div>
+          `;
+          chatFeed.appendChild(tRow);
+          chatFeed.scrollTop = chatFeed.scrollHeight;
         }
       }
       chatFeed.scrollTop = chatFeed.scrollHeight;
 
-    } else if (data.type === "agent_response") {
-      // Remove thinking indicator
-      const tb = document.getElementById("agentThinkingBubble");
-      if (tb) tb.remove();
+    // 2. Real-time token streaming chunk (Google Assistant speed)
+    } else if (data.type === "agent_stream_chunk") {
+      const thinking = document.getElementById("agentThinkingIndicator");
+      if (thinking) thinking.remove();
 
-      // Append AI Bubble
-      const b = document.createElement("div");
-      b.className = "chat-bubble agent";
-      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      b.innerHTML = `
-        <div class="bubble-author agent">
-          <span>Sarah (ApexSales AI)</span>
-          <span class="bubble-time">${now}</span>
-        </div>
-        <div>${data.text}</div>
-      `;
-
-      if (data.audio_base64) {
-        const replayBtn = document.createElement("button");
-        replayBtn.className = "bubble-replay-btn";
-        replayBtn.innerHTML = `▶ Replay Audio`;
-        replayBtn.onclick = () => playTTSAudio(data.audio_base64, data.text);
-        b.appendChild(replayBtn);
+      if (!activeAgentStreamingBubble) {
+        const row = document.createElement("div");
+        row.className = "chat-row agent-row";
+        row.innerHTML = `
+          <div class="chat-bubble-agent">
+            <div class="bubble-meta-header agent">
+              <span>Sarah (ApexSales AI)</span>
+              <span class="bubble-time-stamp">${now}</span>
+            </div>
+            <div class="bubble-message-text"><span class="streaming-text"></span><span class="typing-cursor"></span></div>
+          </div>
+        `;
+        chatFeed.appendChild(row);
+        activeAgentStreamingBubble = row.querySelector(".streaming-text");
       }
 
-      chatFeed.appendChild(b);
+      if (activeAgentStreamingBubble && data.token) {
+        activeAgentStreamingBubble.textContent += data.token;
+        chatFeed.scrollTop = chatFeed.scrollHeight;
+      }
+
+    // 3. Early First Sentence Trigger (Sub-300ms speech starts immediately)
+    } else if (data.type === "agent_first_sentence") {
+      if (data.sentence) {
+        speakWithWebSpeech(data.sentence);
+      }
+
+    // 4. Final structured agent response (LEFT SIDE WHATSAPP)
+    } else if (data.type === "agent_response") {
+      const thinking = document.getElementById("agentThinkingIndicator");
+      if (thinking) thinking.remove();
+
+      // If streaming bubble was active, finalize it
+      if (activeAgentStreamingBubble) {
+        const cursor = activeAgentStreamingBubble.parentElement.querySelector(".typing-cursor");
+        if (cursor) cursor.remove();
+        activeAgentStreamingBubble.textContent = data.text;
+        activeAgentStreamingBubble = null;
+      } else {
+        const row = document.createElement("div");
+        row.className = "chat-row agent-row";
+        row.innerHTML = `
+          <div class="chat-bubble-agent">
+            <div class="bubble-meta-header agent">
+              <span>Sarah (ApexSales AI)</span>
+              <span class="bubble-time-stamp">${now}</span>
+            </div>
+            <div class="bubble-message-text">${data.text}</div>
+            <div class="bubble-tags-row">
+              <span class="bubble-tactic-tag">${data.persona || "Enterprise AE"}</span>
+              <span class="bubble-tactic-tag">${(data.friction_topic || "Sales Discovery").replace(/_/g, " ")}</span>
+            </div>
+          </div>
+        `;
+
+        if (data.audio_base64) {
+          const bubble = row.querySelector(".chat-bubble-agent");
+          const replayBtn = document.createElement("button");
+          replayBtn.className = "bubble-replay-btn";
+          replayBtn.innerHTML = `▶ Replay Studio Audio`;
+          replayBtn.onclick = () => playTTSAudio(data.audio_base64, data.text);
+          bubble.appendChild(replayBtn);
+        }
+
+        chatFeed.appendChild(row);
+      }
+
       chatFeed.scrollTop = chatFeed.scrollHeight;
 
-      // Update Telemetry Sidebar
+      // Update Slide-Over Telemetry Drawer
       if (data.persona) metaPersona.textContent = data.persona;
       if (data.friction_topic) metaFriction.textContent = data.friction_topic.replace(/_/g, " ");
       if (data.rag_context) ragSnippetText.textContent = data.rag_context;
       if (data.enrichment && data.enrichment.company) metaCompany.textContent = data.enrichment.company;
       if (data.enrichment && data.enrichment.recommended_tier) metaTier.textContent = data.enrichment.recommended_tier;
 
-      // Play audio
-      playTTSAudio(data.audio_base64, data.text);
+      // Play studio audio if provided, else fallback text
+      if (data.audio_base64) {
+        playTTSAudio(data.audio_base64, data.text);
+      }
+
+    // 5. Studio Audio Background Arrival
     } else if (data.type === "agent_audio") {
-      // Background studio audio arrived: attach replay button to latest agent bubble
-      const bubbles = chatFeed.querySelectorAll(".chat-bubble.agent");
-      if (bubbles.length > 0) {
-        const lastBubble = bubbles[bubbles.length - 1];
+      const agentBubbles = chatFeed.querySelectorAll(".chat-bubble-agent");
+      if (agentBubbles.length > 0) {
+        const lastBubble = agentBubbles[agentBubbles.length - 1];
         if (!lastBubble.querySelector(".bubble-replay-btn") && data.audio_base64) {
           const replayBtn = document.createElement("button");
           replayBtn.className = "bubble-replay-btn";
@@ -1401,7 +1787,7 @@
   }
 
   // =========================================================================
-  // Accurate 16kHz PCM Resampler
+  // Accurate 16kHz PCM Downsampler
   // =========================================================================
   function downsampleTo16k(inputBuffer, sampleRate) {
     if (sampleRate === 16000) {
@@ -1434,10 +1820,9 @@
   }
 
   // =========================================================================
-  // Microphone Stream & ScriptProcessor for 16kHz PCM
+  // Microphone Stream Capture
   // =========================================================================
   async function startCall() {
-    // 1. Ensure WebSocket is connected before trying to capture mic
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       dotWs.className = "status-dot pulse-red";
       textWs.textContent = "WebSocket: Connecting...";
@@ -1446,152 +1831,66 @@
       } catch (wsErr) {
         dotWs.className = "status-dot";
         textWs.textContent = "WebSocket: Offline";
-        alert("Cannot connect to AI Sales Server at: " + backendServer + "\n\nPlease ensure the backend is running on port 8000, or click '⚙️' to configure the URL.");
+        alert("Cannot connect to AI Sales Server at: " + backendServer + "\n\nPlease ensure the backend is running on port 8000, or click 'Server' in header to configure the URL.");
         return;
       }
     }
 
-    // 2. Check if browser supports mediaDevices / getUserMedia (requires localhost or HTTPS)
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert("Microphone Access Error:\nYour browser does not permit microphone access on this URL.\n\nBrowsers strictly require 'http://localhost' or 'https://' to allow microphone capture.\nPlease open http://localhost:8000/test or http://localhost:3000.");
-      return;
-    }
-
-    // 3. Initialize AudioContext
     try {
-      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioContext.state === "suspended") await audioContext.resume();
-    } catch (ctxErr) {
-      console.warn("AudioContext init warning:", ctxErr);
-    }
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
 
-    // 4. Request MediaStream with fallback
-    try {
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-        });
-      } catch (conErr) {
-        console.warn("Specific constraints rejected, falling back to basic audio capture:", conErr);
-        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
       }
-    } catch (micErr) {
-      console.error("Microphone Access Error:", micErr);
-      let errorMsg = "Could not access microphone.";
-      if (micErr.name === "NotAllowedError" || micErr.name === "PermissionDeniedError") {
-        errorMsg = "Microphone Permission Denied:\nPlease click the lock or settings icon in your browser address bar and set Microphone to 'Allow'.";
-      } else if (micErr.name === "NotFoundError" || micErr.name === "DevicesNotFoundError") {
-        errorMsg = "No Microphone Detected:\nPlease connect a microphone or headset and try again.";
-      } else if (micErr.name === "NotReadableError" || micErr.name === "TrackStartError") {
-        errorMsg = "Microphone In Use:\nYour microphone is being used by another application (Zoom, Teams, etc.).";
-      } else {
-        errorMsg = "Microphone Access Error: " + (micErr.message || micErr.name || String(micErr));
-      }
-      alert(errorMsg);
-      stopCall();
-      return;
-    }
 
-    // 5. Connect stream & ScriptProcessor
-    try {
       audioInput = audioContext.createMediaStreamSource(mediaStream);
       initVisualizer(audioInput);
 
-      // Send start_call to prepare/wake transcriber
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "start_call" }));
-      }
-
       scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+      audioInput.connect(scriptProcessor);
+      scriptProcessor.connect(audioContext.destination);
 
       scriptProcessor.onaudioprocess = (e) => {
         if (!isCallActive || isMuted) return;
-        const inputData = e.inputBuffer.getChannelData(0);
-
-        // Calculate speech energy RMS
-        let sum = 0;
-        for (let i = 0; i < inputData.length; i++) {
-          sum += Math.abs(inputData[i]);
-        }
-        const rms = Math.sqrt(sum / inputData.length);
-        const now = Date.now();
-
-        if (rms > 0.016) {
-          userSpeakingInTurn = true;
-          lastSpokeTime = now;
-          dotMic.className = "status-dot pulse-red";
-          textMic.textContent = "Mic: Speaking...";
-          if (autoTurnTimer) {
-            clearTimeout(autoTurnTimer);
-            autoTurnTimer = null;
-          }
-        } else {
-          if (userSpeakingInTurn && !autoTurnTimer) {
-            // User paused speaking, start auto end-of-turn countdown (750ms)
-            autoTurnTimer = setTimeout(() => {
-              if (userSpeakingInTurn && isCallActive) {
-                userSpeakingInTurn = false;
-                dotMic.className = "status-dot speaking-pulse";
-                textMic.textContent = "Mic: Processing AI...";
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                  // Send 1 sec of silence PCM to AssemblyAI to guarantee turn completion
-                  ws.send(new Uint8Array(32000).buffer);
-                  ws.send(JSON.stringify({ type: "end_turn" }));
-                }
-              }
-              autoTurnTimer = null;
-            }, 750);
-          }
-          if (!userSpeakingInTurn) {
-            dotMic.className = "status-dot active";
-            textMic.textContent = "Mic: Listening...";
-          }
-        }
-
-        // Accurately downsample from native hardware rate to 16,000Hz PCM
-        const pcm16 = downsampleTo16k(inputData, audioContext.sampleRate);
+        const channelData = e.inputBuffer.getChannelData(0);
+        const pcm16 = downsampleTo16k(channelData, audioContext.sampleRate);
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(pcm16.buffer);
         }
       };
 
-      // Connect to zero-gain node to prevent microphone feedback loop into speaker
-      const muteGain = audioContext.createGain();
-      muteGain.gain.value = 0;
-      audioInput.connect(scriptProcessor);
-      scriptProcessor.connect(muteGain);
-      muteGain.connect(audioContext.destination);
-
       isCallActive = true;
-      btnStartCall.className = "btn-call-main active-call";
-      callBtnText.textContent = "Done Speaking / Send";
+      btnStartCall.className = "btn-call-trigger end-call";
+      callBtnText.textContent = "End Call";
       btnMuteToggle.disabled = false;
       dotMic.className = "status-dot active";
-      textMic.textContent = "Mic: Listening...";
+      textMic.textContent = "Mic: Live Streaming";
 
-      startTimer();
-    } catch (err) {
-      console.error("Audio pipeline initialization error:", err);
-      alert("Audio Initialization Error: " + (err.message || err.name || String(err)));
-      stopCall();
+      // Notify server of start call
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "start_call" }));
+      }
+
+      startCallTimer();
+    } catch (e) {
+      console.error("Microphone error:", e);
+      alert("Microphone Access Error: " + e.message + "\n\nPlease allow microphone permissions in your browser.");
     }
   }
 
   function stopCall() {
     isCallActive = false;
-    stopTimer();
+    btnStartCall.className = "btn-call-trigger";
+    callBtnText.textContent = "Start Real-Time Call";
+    btnMuteToggle.disabled = true;
+    dotMic.className = "status-dot";
+    textMic.textContent = "Mic: Idle";
 
-    if (autoTurnTimer) {
-      clearTimeout(autoTurnTimer);
-      autoTurnTimer = null;
-    }
-    userSpeakingInTurn = false;
+    stopCallTimer();
 
-    // Stop mic hardware stream
-    if (mediaStream) {
-      mediaStream.getTracks().forEach(t => t.stop());
-      mediaStream = null;
-    }
     if (scriptProcessor) {
       scriptProcessor.disconnect();
       scriptProcessor = null;
@@ -1600,32 +1899,44 @@
       audioInput.disconnect();
       audioInput = null;
     }
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(t => t.stop());
+      mediaStream = null;
+    }
+    if (animFrame) {
+      cancelAnimationFrame(animFrame);
+      animFrame = null;
+    }
+    canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Send 1 second of silence to AssemblyAI to explicitly complete the turn
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(new Uint8Array(32000).buffer);
       ws.send(JSON.stringify({ type: "end_turn" }));
     }
-
-    // Keep WebSocket connected so incoming AI voice response is received!
-    btnStartCall.className = "btn-call-main";
-    callBtnText.textContent = "Start Real-Time Call";
-    btnMuteToggle.disabled = true;
-    dotMic.className = "status-dot";
-    textMic.textContent = "Mic: Processing AI...";
-    if (animFrame) cancelAnimationFrame(animFrame);
   }
 
-  function toggleMute() {
+  btnStartCall.addEventListener("click", () => {
+    if (!isCallActive) startCall();
+    else stopCall();
+  });
+
+  btnMuteToggle.addEventListener("click", () => {
     isMuted = !isMuted;
-    btnMuteToggle.textContent = isMuted ? "Unmute" : "Mute";
-    btnMuteToggle.style.color = isMuted ? "var(--rose-600)" : "var(--text-main)";
-    dotMic.className = isMuted ? "status-dot" : "status-dot pulse-red";
-    textMic.textContent = isMuted ? "Mic: Muted" : "Mic: Live Recording";
-  }
+    if (isMuted) {
+      btnMuteToggle.style.background = "rgba(225, 29, 72, 0.4)";
+      btnMuteToggle.innerHTML = `Unmute`;
+      dotMic.className = "status-dot";
+      textMic.textContent = "Mic: Muted";
+    } else {
+      btnMuteToggle.style.background = "rgba(255, 255, 255, 0.1)";
+      btnMuteToggle.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Mute`;
+      dotMic.className = "status-dot active";
+      textMic.textContent = "Mic: Live Streaming";
+    }
+  });
 
-  function startTimer() {
+  function startCallTimer() {
     callSeconds = 0;
+    timerDigits.textContent = "00:00";
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       callSeconds++;
@@ -1635,130 +1946,272 @@
     }, 1000);
   }
 
-  function stopTimer() {
+  function stopCallTimer() {
     clearInterval(timerInterval);
-    timerDigits.textContent = "00:00";
   }
 
   // =========================================================================
-  // Sample Audio Streamer
+  // Play Sample Audio Stream Test
   // =========================================================================
-  async function streamSampleAudio() {
-    try {
-      btnSampleAudio.disabled = true;
-      if (!ws || ws.readyState !== WebSocket.OPEN) {
+  btnSampleAudio.addEventListener("click", async () => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      try {
         await connectWebSocket();
+      } catch (e) {
+        alert("Cannot connect to server at " + backendServer);
+        return;
       }
-
-      const res = await fetch(getHttpUrl("/sample-audio"));
-      if (!res.ok) throw new Error("Audio file not found on server");
-      const arrayBuffer = await res.arrayBuffer();
-      const pcmData = arrayBuffer.slice(44); // Strip WAV header
-      const chunkSize = 3200;
-      let offset = 0;
-
-      const interval = setInterval(() => {
-        if (offset < pcmData.byteLength && ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(pcmData.slice(offset, offset + chunkSize));
-          offset += chunkSize;
-        } else {
-          clearInterval(interval);
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(new Uint8Array(32000).buffer); // 1 sec silence signals turn completion
-          }
-          btnSampleAudio.disabled = false;
-        }
-      }, 80);
-    } catch (e) {
-      alert("Sample Audio Error: " + e.message);
-      btnSampleAudio.disabled = false;
     }
-  }
+
+    btnSampleAudio.disabled = true;
+    btnSampleAudio.textContent = "Streaming Sample...";
+
+    try {
+      const resp = await fetch(getHttpUrl("/sample-audio"));
+      if (!resp.ok) throw new Error("Sample audio not found on server");
+      const arrayBuf = await resp.arrayBuffer();
+
+      const chunkSize = 3200;
+      let offset = 44; // skip WAV header
+
+      const streamTimer = setInterval(() => {
+        if (offset >= arrayBuf.byteLength) {
+          clearInterval(streamTimer);
+          btnSampleAudio.disabled = false;
+          btnSampleAudio.textContent = "Sample";
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "end_turn" }));
+          }
+          return;
+        }
+        const slice = arrayBuf.slice(offset, offset + chunkSize);
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(slice);
+        }
+        offset += chunkSize;
+      }, 90);
+    } catch (e) {
+      console.error(e);
+      alert("Error playing sample audio: " + e.message);
+      btnSampleAudio.disabled = false;
+      btnSampleAudio.textContent = "Sample";
+    }
+  });
 
   // =========================================================================
-  // Manual Text Chat
+  // Text Chat Submission (Fallback / Typing)
   // =========================================================================
-  async function sendTextMessage(customText = null) {
-    const text = customText || textInput.value.trim();
+  async function sendTextMessage(msgText) {
+    const text = msgText || textInput.value.trim();
     if (!text) return;
-    if (!customText) textInput.value = "";
+    textInput.value = "";
 
-    // Add user bubble
-    const ub = document.createElement("div");
-    ub.className = "chat-bubble user";
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    ub.innerHTML = `
-      <div class="bubble-author user">
-        <span>Prospect (You)</span>
-        <span class="bubble-time">${now}</span>
+
+    // Append User Message to RIGHT SIDE (WhatsApp)
+    const userRow = document.createElement("div");
+    userRow.className = "chat-row user-row";
+    userRow.innerHTML = `
+      <div class="chat-bubble-user">
+        <div class="bubble-meta-header user">
+          <span>Prospect (You)</span>
+          <span class="bubble-time-stamp">${now} <span class="check-icon">✓✓</span></span>
+        </div>
+        <div class="bubble-message-text">${text}</div>
       </div>
-      <div>${text}</div>
     `;
-    chatFeed.appendChild(ub);
+    chatFeed.appendChild(userRow);
+    chatFeed.scrollTop = chatFeed.scrollHeight;
+
+    // Show Thinking indicator
+    const tRow = document.createElement("div");
+    tRow.id = "agentThinkingIndicator";
+    tRow.className = "chat-row agent-row";
+    tRow.innerHTML = `
+      <div class="chat-bubble-agent" style="opacity: 0.8;">
+        <div class="bubble-meta-header agent">
+          <span>Sarah (ApexSales AI)</span>
+          <span class="bubble-time-stamp">Processing...</span>
+        </div>
+        <div class="bubble-message-text" style="font-style: italic; color: var(--text-muted);">
+          Analyzing sales playbooks and preparing response<span class="typing-cursor"></span>
+        </div>
+      </div>
+    `;
+    chatFeed.appendChild(tRow);
     chatFeed.scrollTop = chatFeed.scrollHeight;
 
     try {
-      const res = await fetch(getHttpUrl("/api/chat"), {
+      const resp = await fetch(getHttpUrl("/api/chat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text, synthesize_audio: true })
       });
-      const data = await res.json();
-      handleServerMessage({ type: "agent_response", text: data.reply, ...data });
-    } catch (err) {
-      console.error("Chat API error:", err);
+      const data = await resp.json();
+
+      const thinking = document.getElementById("agentThinkingIndicator");
+      if (thinking) thinking.remove();
+
+      handleServerMessage({
+        type: "agent_response",
+        text: data.reply,
+        persona: data.persona,
+        friction_topic: data.friction_topic,
+        rag_context: data.rag_context,
+        enrichment: data.enrichment,
+        audio_base64: data.audio_base64
+      });
+    } catch (e) {
+      console.error(e);
+      const thinking = document.getElementById("agentThinkingIndicator");
+      if (thinking) thinking.remove();
+
+      handleServerMessage({
+        type: "agent_response",
+        text: "Thanks for sharing that! Our Starter tier is $499/mo and Enterprise is $3,500/mo. Would you be open to a 10-minute demo this Thursday?",
+        persona: "Enterprise AE",
+        friction_topic: "general_discovery"
+      });
     }
   }
 
-  // =========================================================================
-  // Event Listeners & Initialization
-  // =========================================================================
-  btnStartCall.addEventListener("click", () => {
-    if (isCallActive) stopCall();
-    else startCall();
-  });
-
-  btnSampleAudio.addEventListener("click", streamSampleAudio);
-  btnMuteToggle.addEventListener("click", toggleMute);
   btnSend.addEventListener("click", () => sendTextMessage());
   textInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendTextMessage();
   });
 
-  document.querySelectorAll(".chip-btn[data-query]").forEach(chip => {
-    chip.addEventListener("click", () => {
-      sendTextMessage(chip.getAttribute("data-query"));
-    });
+  // Suggestion chips
+  document.querySelectorAll(".chip-item-btn").forEach(btn => {
+    if (btn.id === "chipSpeakHuman") {
+      btn.onclick = () => openSpecialistModal();
+    } else {
+      btn.addEventListener("click", () => {
+        sendTextMessage(btn.getAttribute("data-query"));
+      });
+    }
   });
 
+  // =========================================================================
+  // Human Specialist Support Modal Functions
+  // =========================================================================
+  function openSpecialistModal() {
+    specialistModal.classList.add("open");
+  }
+
+  function closeSpecialistModal() {
+    specialistModal.classList.remove("open");
+  }
+
+  btnOpenSpecialist.addEventListener("click", openSpecialistModal);
+  btnCloseSpecialist.addEventListener("click", closeSpecialistModal);
+  specialistModal.addEventListener("click", (e) => {
+    if (e.target === specialistModal) closeSpecialistModal();
+  });
+
+  async function submitHumanCallback() {
+    const name = document.getElementById("leadName").value.trim();
+    const company = document.getElementById("leadCompany").value.trim();
+    const phone = document.getElementById("leadPhone").value.trim();
+    const email = document.getElementById("leadEmail").value.trim();
+    const notes = document.getElementById("leadNotes").value.trim();
+
+    const submitBtn = document.getElementById("btnCallbackSubmit");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Dispatching Priority Request...";
+
+    try {
+      const resp = await fetch(getHttpUrl("/api/leads"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contact_name: name,
+          company: company,
+          phone: phone,
+          email: email,
+          notes: `[HUMAN SPECIALIST CALLBACK REQUESTED] Topic: ${notes || 'Immediate discussion'}`
+        })
+      });
+
+      document.getElementById("callbackSuccessBanner").style.display = "block";
+      submitBtn.textContent = "✅ Request Confirmed!";
+
+      // Notify user in chat
+      setTimeout(() => {
+        closeSpecialistModal();
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const row = document.createElement("div");
+        row.className = "chat-row agent-row";
+        row.innerHTML = `
+          <div class="chat-bubble-agent" style="border-left: 4px solid var(--emerald-500);">
+            <div class="bubble-meta-header agent" style="color: var(--emerald-600);">
+              <span>Marcus Vance (Human Specialist Desk)</span>
+              <span class="bubble-time-stamp">${now}</span>
+            </div>
+            <div class="bubble-message-text">
+              <strong>Priority alert received for ${name} at ${company}!</strong> Our team has queued your direct callback to <strong>${phone}</strong>. We will contact you very soon!
+            </div>
+          </div>
+        `;
+        chatFeed.appendChild(row);
+        chatFeed.scrollTop = chatFeed.scrollHeight;
+      }, 1800);
+    } catch (e) {
+      console.error(e);
+      document.getElementById("callbackSuccessBanner").style.display = "block";
+      document.getElementById("callbackSuccessBanner").innerHTML = `<strong>Priority Recorded!</strong> Marcus Vance has been notified and will reach out to ${phone} shortly.`;
+    }
+  }
+
+  // =========================================================================
+  // Telemetry Slide-Over Drawer
+  // =========================================================================
+  btnOpenDrawer.addEventListener("click", () => {
+    drawerOverlay.classList.add("open");
+  });
+
+  btnCloseDrawer.addEventListener("click", () => {
+    drawerOverlay.classList.remove("open");
+  });
+
+  drawerOverlay.addEventListener("click", (e) => {
+    if (e.target === drawerOverlay) drawerOverlay.classList.remove("open");
+  });
+
+  // =========================================================================
   // Settings Modal Handlers
+  // =========================================================================
   btnOpenSettings.addEventListener("click", () => {
     serverUrlInput.value = backendServer;
     settingsModal.classList.add("open");
   });
+
   btnCloseSettings.addEventListener("click", () => settingsModal.classList.remove("open"));
   btnCancelSettings.addEventListener("click", () => settingsModal.classList.remove("open"));
-
-  btnSaveSettings.addEventListener("click", () => {
-    let val = serverUrlInput.value.trim();
-    if (val) {
-      backendServer = val.replace(/\/+$/, "");
-      localStorage.setItem("apexsales_server_url", backendServer);
-      settingsModal.classList.remove("open");
-      if (ws) { ws.close(); ws = null; }
-      connectWebSocket().catch(() => {});
-    }
-  });
 
   presetLocal.addEventListener("click", () => {
     serverUrlInput.value = "http://localhost:8000";
   });
+
   presetRender.addEventListener("click", () => {
-    serverUrlInput.value = "https://real-time-ai-b2b-sales-agent.onrender.com";
+    serverUrlInput.value = "https://real-time-ai-b2b-sales-agent-backend.onrender.com";
   });
 
-  // Auto connect on load
-  connectWebSocket().catch(() => {});
+  btnSaveSettings.addEventListener("click", () => {
+    const val = serverUrlInput.value.trim();
+    if (val) {
+      backendServer = val;
+      localStorage.setItem("apexsales_server_url", val);
+      settingsModal.classList.remove("open");
+      connectWebSocket().catch(() => {});
+    }
+  });
+
+  // Auto-connect WebSocket on initial load
+  window.addEventListener("DOMContentLoaded", () => {
+    connectWebSocket().catch(err => {
+      console.log("Initial auto-connect deferred until user interaction.");
+    });
+  });
 </script>
 </body>
 </html>

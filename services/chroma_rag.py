@@ -43,6 +43,7 @@ class ChromaRAGPipeline:
         self.client = None
         self.collection = None
         self._initialized = False
+        self._query_cache: Dict[str, List[Dict[str, Any]]] = {}
 
         self._init_chroma()
 
@@ -157,6 +158,10 @@ class ChromaRAGPipeline:
         Retrieves top relevant knowledge chunks matching query text.
         Returns list of dicts with 'content', 'metadata', 'distance'.
         """
+        cache_key = f"{query_text.strip().lower()}_{n_results}_{category}"
+        if cache_key in self._query_cache:
+            return self._query_cache[cache_key]
+
         if self.collection:
             where_filter = {"category": category} if category else None
             try:
@@ -176,6 +181,7 @@ class ChromaRAGPipeline:
                         "metadata": meta,
                         "similarity_score": round(1.0 - float(dist), 3) if dist is not None else 1.0
                     })
+                self._query_cache[cache_key] = output
                 return output
             except Exception as e:
                 logger.error(f"ChromaDB query error: {e}. Switching to instant in-memory fallback.")
@@ -191,7 +197,9 @@ class ChromaRAGPipeline:
             if score > 0:
                 scored.append((score, c))
         scored.sort(key=lambda x: x[0], reverse=True)
-        return [{"content": item["content"], "metadata": {"category": item["category"]}, "similarity_score": round(score / len(q_words), 2)} for score, item in scored[:n_results]]
+        res = [{"content": item["content"], "metadata": {"category": item["category"]}, "similarity_score": round(score / len(q_words), 2)} for score, item in scored[:n_results]]
+        self._query_cache[cache_key] = res
+        return res
 
     def add_playbook(self, title: str, content: str, category: str = "objection_handling"):
         """Dynamically inserts a newly generated objection playbook into ChromaDB."""

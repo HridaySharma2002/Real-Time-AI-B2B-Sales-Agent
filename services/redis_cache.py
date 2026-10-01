@@ -155,6 +155,8 @@ class SalesRedisService:
                 pass
         return None
 
+    get_cached_persona = get_cached_lead_persona
+
 
 # Global singleton
 _redis_instance: Optional[SalesRedisService] = None

@@ -31,10 +31,13 @@ from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 
 from dotenv import load_dotenv
 
-# Ensure root workspace is in sys.path
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if root_dir not in sys.path:
-    sys.path.insert(0, root_dir)
+# Ensure both engine directory and root workspace are in sys.path
+curr_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.abspath(os.path.join(curr_dir, ".."))
+
+for p in [curr_dir, root_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 load_dotenv(os.path.join(root_dir, ".env"))
 load_dotenv()
@@ -98,12 +101,7 @@ def read_root(request: Request):
     if os.path.exists(frontend_html):
         with open(frontend_html, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
-    # Fallback to local test_ui.html
-    html_file = os.path.join(os.path.dirname(__file__), "test_ui.html")
-    if os.path.exists(html_file):
-        with open(html_file, "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
-    return HTMLResponse("<h1>ApexSales AI Real-Time B2B Sales Agent</h1><p>Web UI file not found.</p>")
+    return HTMLResponse("<h1>ApexSales AI Real-Time B2B Sales Agent</h1><p>Web UI file not found in frontend/index.html.</p>")
 
 
 @app.get("/test", response_class=HTMLResponse)
@@ -138,9 +136,12 @@ def get_health_status():
 
 @app.get("/sample-audio")
 def get_sample_audio():
-    sample_file = os.path.join(os.path.dirname(__file__), "test_sample_16k.wav")
-    if os.path.exists(sample_file):
-        return FileResponse(sample_file, media_type="audio/wav")
+    for candidate in [
+        os.path.join(root_dir, "tests", "test_sample_16k.wav"),
+        os.path.join(os.path.dirname(__file__), "test_sample_16k.wav")
+    ]:
+        if os.path.exists(candidate):
+            return FileResponse(candidate, media_type="audio/wav")
     return JSONResponse(status_code=404, content={"error": "Sample audio file not found"})
 
 
