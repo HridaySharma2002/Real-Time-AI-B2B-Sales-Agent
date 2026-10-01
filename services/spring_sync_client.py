@@ -27,6 +27,19 @@ class SpringWebFluxSyncClient:
         self.base_url = base_url
         self._timeout = httpx.Timeout(4.0, connect=2.0)
 
+    def is_healthy(self) -> bool:
+        """Quick non-blocking check if Spring microservice port is reachable."""
+        try:
+            import socket
+            from urllib.parse import urlparse
+            parsed = urlparse(self.base_url)
+            host = parsed.hostname or "127.0.0.1"
+            port = parsed.port or 8080
+            with socket.create_connection((host, port), timeout=0.3):
+                return True
+        except Exception:
+            return False
+
     async def sync_lead(self, lead_data: Dict[str, Any]) -> bool:
         """Sends lead creation/update to Spring WebFlux `/api/leads`."""
         url = f"{self.base_url}/api/leads"
