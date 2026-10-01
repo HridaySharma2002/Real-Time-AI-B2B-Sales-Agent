@@ -1224,16 +1224,27 @@
     }
   }
 
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.getVoices();
+    };
+  }
+
   function speakWithWebSpeech(text) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
 
     const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1.0;
+    utter.rate = 1.05;
     utter.pitch = 1.0;
 
     const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Jenny") || v.name.includes("Google") || v.name.includes("Samantha"))) || voices[0];
+    let preferred = null;
+    if (voices && voices.length > 0) {
+      preferred = voices.find(v => (v.lang.startsWith("en") || v.lang.startsWith("en-US")) && 
+        (v.name.includes("Natural") || v.name.includes("Jenny") || v.name.includes("Google") || v.name.includes("Samantha") || v.name.includes("Zira"))) || 
+        voices.find(v => v.lang.startsWith("en")) || voices[0];
+    }
     if (preferred) utter.voice = preferred;
 
     dotSpeaker.className = "status-dot speaking-pulse";
@@ -1373,6 +1384,19 @@
 
       // Play audio
       playTTSAudio(data.audio_base64, data.text);
+    } else if (data.type === "agent_audio") {
+      // Background studio audio arrived: attach replay button to latest agent bubble
+      const bubbles = chatFeed.querySelectorAll(".chat-bubble.agent");
+      if (bubbles.length > 0) {
+        const lastBubble = bubbles[bubbles.length - 1];
+        if (!lastBubble.querySelector(".bubble-replay-btn") && data.audio_base64) {
+          const replayBtn = document.createElement("button");
+          replayBtn.className = "bubble-replay-btn";
+          replayBtn.innerHTML = `▶ Replay Studio Audio`;
+          replayBtn.onclick = () => playTTSAudio(data.audio_base64, data.text);
+          lastBubble.appendChild(replayBtn);
+        }
+      }
     }
   }
 

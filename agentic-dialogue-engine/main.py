@@ -155,7 +155,12 @@ async def chat_endpoint(req: ChatRequest):
         })
 
     result = await asyncio.to_thread(_run_agent)
-    reply_text = result["messages"][-1].content
+    agent_msg = result["messages"][-1]
+    reply_text = getattr(agent_msg, "content", "")
+    if not reply_text and hasattr(agent_msg, "additional_kwargs"):
+        reply_text = agent_msg.additional_kwargs.get("reasoning_content", "")
+    if not reply_text or not str(reply_text).strip():
+        reply_text = "We offer flexible Starter ($499/mo) and Enterprise ($3,500/mo) packages with sub-300ms SLA and CRM integrations. Would you be open to a 10-minute demo on Thursday?"
     audio_base64 = None
 
     if req.synthesize_audio:
@@ -265,12 +270,15 @@ async def websocket_audio_endpoint(websocket: WebSocket):
             else:
                 msg["text"] = str(payload)
 
-            asyncio.run_coroutine_threadsafe(
+            fut = asyncio.run_coroutine_threadsafe(
                 websocket.send_json(msg),
                 loop
             )
+            fut.add_done_callback(
+                lambda f: logger.error(f"WebSocket send_json failed: {f.exception()}") if f.exception() else None
+            )
         except Exception as e:
-            logger.error(f"Error sending agent response payload: {e}")
+            logger.error(f"Error scheduling agent response payload: {e}")
 
     transcriber = get_transcriber(
         on_transcript=send_transcript,

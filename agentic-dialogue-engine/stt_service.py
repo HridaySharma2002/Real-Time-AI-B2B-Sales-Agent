@@ -15,6 +15,7 @@ import os
 import sys
 import base64
 import logging
+import threading
 from dotenv import load_dotenv
 
 # Ensure root directory is accessible for services and TTS
@@ -96,62 +97,85 @@ class TranscriberService:
                 logger.error(f"Error in on_transcript callback: {e}")
 
         if event.end_of_turn and event.transcript.strip():
-            safe_user_transcript = event.transcript.encode("ascii", "replace").decode("ascii")
-            print(f"[User Said]: {safe_user_transcript}", flush=True)
-            try:
-                from agent_workflow import agent_app
-                from langchain_core.messages import HumanMessage
-                
-                # Invoke LangGraph Multi-Step Reasoning Agent
-                result = agent_app.invoke({
-                    "messages": [HumanMessage(content=event.transcript)],
-                    "session_id": self.session_id,
-                    "lead_id": self.lead_id
+            # Process turn in a background daemon thread so AssemblyAI's client WebSocket loop is never blocked
+            threading.Thread(
+                target=self._process_turn_response,
+                args=(event.transcript,),
+                daemon=True
+            ).start()
+
+    def _process_turn_response(self, transcript: str):
+        safe_user_transcript = transcript.encode("ascii", "replace").decode("ascii")
+        print(f"[User Said]: {safe_user_transcript}", flush=True)
+        try:
+            from agent_workflow import agent_app
+            from langchain_core.messages import HumanMessage
+            
+            # Invoke LangGraph Multi-Step Reasoning Agent
+            result = agent_app.invoke({
+                "messages": [HumanMessage(content=transcript)],
+                "session_id": self.session_id,
+                "lead_id": self.lead_id
+            })
+            
+            agent_msg = result["messages"][-1]
+            agent_response = getattr(agent_msg, "content", "")
+            if not agent_response or not str(agent_response).strip():
+                if hasattr(agent_msg, "additional_kwargs"):
+                    agent_response = agent_msg.additional_kwargs.get("reasoning_content", "")
+            if not agent_response or not str(agent_response).strip():
+                agent_response = "We offer flexible Starter ($499/mo) and Enterprise ($3,500/mo) packages with sub-300ms SLA and CRM integrations. Would you be open to a 10-minute demo on Thursday?"
+
+            persona = result.get("persona", "Corporate Enterprise")
+            cluster_id = result.get("cluster_id", 1)
+            friction_topic = result.get("friction_topic", "general_discovery")
+            rag_context = result.get("rag_context", "")
+            enrichment = result.get("enrichment", {})
+
+            safe_agent_response = agent_response.encode("ascii", "replace").decode("ascii")
+            print(f"[Agent Response]: {safe_agent_response}", flush=True)
+
+            # 1. IMMEDIATELY deliver text response to prospect so UI unblocks instantly and WebSpeech starts speaking
+            if self.on_agent_response:
+                self.on_agent_response({
+                    "type": "agent_response",
+                    "text": agent_response,
+                    "user_transcript": transcript,
+                    "audio_base64": None,
+                    "persona": persona,
+                    "cluster_id": cluster_id,
+                    "friction_topic": friction_topic,
+                    "rag_context": rag_context,
+                    "enrichment": enrichment
                 })
-                
-                agent_msg = result["messages"][-1]
-                agent_response = getattr(agent_msg, "content", "")
-                if not agent_response or not str(agent_response).strip():
-                    if hasattr(agent_msg, "additional_kwargs"):
-                        agent_response = agent_msg.additional_kwargs.get("reasoning_content", "")
-                if not agent_response or not str(agent_response).strip():
-                    agent_response = "We offer flexible Starter ($499/mo) and Enterprise ($3,500/mo) packages with sub-300ms SLA and CRM integrations. Would you be open to a 10-minute demo on Thursday?"
 
-                persona = result.get("persona", "Corporate Enterprise")
-                cluster_id = result.get("cluster_id", 1)
-                friction_topic = result.get("friction_topic", "general_discovery")
-                rag_context = result.get("rag_context", "")
-                enrichment = result.get("enrichment", {})
+            # 2. Synthesize server-side neural TTS in background without delaying text dialogue
+            if self.tts:
+                try:
+                    wav_bytes = self.tts.synthesize_to_wav_bytes(agent_response)
+                    if wav_bytes and len(wav_bytes) > 200:
+                        audio_base64 = base64.b64encode(wav_bytes).decode("ascii")
+                        if self.on_agent_response:
+                            self.on_agent_response({
+                                "type": "agent_audio",
+                                "text": agent_response,
+                                "audio_base64": audio_base64
+                            })
+                except Exception as tts_err:
+                    logger.debug(f"Background TTS synthesis error: {tts_err}")
 
-                # Synthesize TTS audio response
-                audio_base64 = None
-                if self.tts:
-                    try:
-                        wav_bytes = self.tts.synthesize_to_wav_bytes(agent_response)
-                        if wav_bytes and len(wav_bytes) > 200:
-                            audio_base64 = base64.b64encode(wav_bytes).decode("ascii")
-                    except Exception as tts_err:
-                        logger.warning(f"TTS synthesis error: {tts_err}")
-
-                safe_agent_response = agent_response.encode("ascii", "replace").decode("ascii")
-                print(f"[Agent Response]: {safe_agent_response}", flush=True)
-
-                if self.on_agent_response:
-                    self.on_agent_response({
-                        "text": agent_response,
-                        "user_transcript": event.transcript,
-                        "audio_base64": audio_base64,
-                        "persona": persona,
-                        "cluster_id": cluster_id,
-                        "friction_topic": friction_topic,
-                        "rag_context": rag_context,
-                        "enrichment": enrichment
-                    })
-
-            except Exception as e:
-                import traceback
-                print(f"Error generating agent response: {e}", flush=True)
-                traceback.print_exc()
+        except Exception as e:
+            import traceback
+            print(f"Error generating agent response: {e}", flush=True)
+            traceback.print_exc()
+            # Failsafe: Send immediate fallback reply so UI is never left in "Thinking..."
+            if self.on_agent_response:
+                self.on_agent_response({
+                    "type": "agent_response",
+                    "text": "Thanks for sharing that! Our Starter plan starts at $499/mo and Enterprise is $3,500/mo. Would you be open to a brief 10-minute demo this Thursday?",
+                    "user_transcript": transcript,
+                    "audio_base64": None
+                })
 
     def connect(self, sample_rate=None, max_retries=3):
         import time
