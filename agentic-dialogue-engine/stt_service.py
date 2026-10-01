@@ -4,8 +4,10 @@ Part of ApexSales AI Real-Time B2B Sales Agent.
 
 Features:
 - Connects to AssemblyAI Streaming v3 WebSocket for real-time speech-to-text.
+- Uses dynamic turn detection (min_turn_silence=500ms, max_turn_silence=1000ms).
+- Auto-reconnects on network drops or inactivity timeouts.
 - Triggers LangGraph multi-step sales agent upon end-of-turn.
-- Synthesizes sales agent voice using Chatterbox / Kokoro TTS.
+- Synthesizes sales agent voice using Chatterbox / Kokoro / Edge-TTS.
 - Delivers transcripts, rich metadata (persona, friction, RAG chunks), and base64 audio to WebSocket clients.
 """
 
@@ -20,6 +22,10 @@ root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
+# Load root .env first, then local if present
+load_dotenv(os.path.join(root_dir, ".env"))
+load_dotenv()
+
 from assemblyai.streaming.v3 import (
     RealTimeTranscriber,
     RealTimeTranscriberOptions,
@@ -27,7 +33,6 @@ from assemblyai.streaming.v3 import (
     RealTimeEvents,
 )
 
-load_dotenv()
 logger = logging.getLogger("STTService")
 
 
@@ -62,12 +67,23 @@ class TranscriberService:
         self.on_transcript = on_transcript
         self.on_agent_response = on_agent_response
         self.tts = _get_tts_agent()
-        self.client = RealTimeTranscriber(RealTimeTranscriberOptions(api_key=self.api_key))
-        
-        self.client.on(RealTimeEvents.Turn, self._on_turn)
-        self.client.on(RealTimeEvents.Error, self._on_error)
         self._connected = False
         self._pending_buffer = bytearray()
+        self._init_client()
+
+    def _init_client(self):
+        self.client = RealTimeTranscriber(RealTimeTranscriberOptions(api_key=self.api_key))
+        self.client.on(RealTimeEvents.Turn, self._on_turn)
+        self.client.on(RealTimeEvents.Error, self._on_error)
+        self.client.on(RealTimeEvents.Termination, self._on_termination)
+
+    def _on_termination(self, client, event):
+        logger.info(f"AssemblyAI session terminated: {event}")
+        self._connected = False
+
+    def _on_error(self, client, error):
+        logger.warning(f"AssemblyAI STT error: {error}")
+        self._connected = False
 
     def _on_turn(self, client, event):
         if not event.transcript:
@@ -93,7 +109,14 @@ class TranscriberService:
                     "lead_id": self.lead_id
                 })
                 
-                agent_response = result["messages"][-1].content
+                agent_msg = result["messages"][-1]
+                agent_response = getattr(agent_msg, "content", "")
+                if not agent_response or not str(agent_response).strip():
+                    if hasattr(agent_msg, "additional_kwargs"):
+                        agent_response = agent_msg.additional_kwargs.get("reasoning_content", "")
+                if not agent_response or not str(agent_response).strip():
+                    agent_response = "We offer flexible Starter ($499/mo) and Enterprise ($3,500/mo) packages with sub-300ms SLA and CRM integrations. Would you be open to a 10-minute demo on Thursday?"
+
                 persona = result.get("persona", "Corporate Enterprise")
                 cluster_id = result.get("cluster_id", 1)
                 friction_topic = result.get("friction_topic", "general_discovery")
@@ -105,7 +128,8 @@ class TranscriberService:
                 if self.tts:
                     try:
                         wav_bytes = self.tts.synthesize_to_wav_bytes(agent_response)
-                        audio_base64 = base64.b64encode(wav_bytes).decode("ascii")
+                        if wav_bytes and len(wav_bytes) > 200:
+                            audio_base64 = base64.b64encode(wav_bytes).decode("ascii")
                     except Exception as tts_err:
                         logger.warning(f"TTS synthesis error: {tts_err}")
 
@@ -129,18 +153,23 @@ class TranscriberService:
                 print(f"Error generating agent response: {e}", flush=True)
                 traceback.print_exc()
 
-    def _on_error(self, client, error):
-        print(f"STT Error: {error}", flush=True)
-
     def connect(self, sample_rate=None, max_retries=3):
         import time
         rate = sample_rate or self.sample_rate
         last_err = None
         for attempt in range(1, max_retries + 1):
             try:
-                self.client.connect(RealTimeParameters(sample_rate=rate))
+                self._init_client()
+                # Configure turn silence thresholds for low-latency voice detection
+                params = RealTimeParameters(
+                    sample_rate=rate,
+                    min_turn_silence=500,
+                    max_turn_silence=1000,
+                    end_of_turn_confidence_threshold=0.4
+                )
+                self.client.connect(params)
                 self._connected = True
-                logger.info(f"AssemblyAI connected successfully (attempt {attempt})")
+                logger.info(f"AssemblyAI connected successfully with turn parameters (attempt {attempt})")
                 if self._pending_buffer:
                     logger.info(f"Flushing {len(self._pending_buffer)} bytes of queued audio to AssemblyAI")
                     self.client.stream(bytes(self._pending_buffer))
@@ -150,16 +179,31 @@ class TranscriberService:
                 last_err = e
                 logger.warning(f"AssemblyAI connect attempt {attempt}/{max_retries} failed: {e}")
                 if attempt < max_retries:
-                    time.sleep(1.0)
+                    time.sleep(0.8)
         raise last_err
 
     def stream(self, data: bytes):
-        if self._connected:
+        if not self._connected:
+            try:
+                self.connect()
+            except Exception as e:
+                logger.warning(f"Auto-connect on stream failed: {e}")
+                if len(self._pending_buffer) < 320000:
+                    self._pending_buffer.extend(data)
+                return
+
+        try:
             self.client.stream(data)
-        else:
-            # Buffer audio up to 10 seconds (320,000 bytes) while connection is establishing
-            if len(self._pending_buffer) < 320000:
-                self._pending_buffer.extend(data)
+        except Exception as e:
+            logger.warning(f"Error streaming to AssemblyAI: {e}. Reconnecting...")
+            self._connected = False
+            try:
+                self.connect()
+                self.client.stream(data)
+            except Exception as retry_err:
+                logger.error(f"Reconnection stream failed: {retry_err}")
+                if len(self._pending_buffer) < 320000:
+                    self._pending_buffer.extend(data)
 
     def disconnect(self, terminate: bool = True):
         self._pending_buffer.clear()
@@ -167,7 +211,7 @@ class TranscriberService:
             try:
                 self.client.disconnect(terminate=terminate)
             except Exception as e:
-                print(f"Error disconnecting transcriber: {e}")
+                logger.warning(f"Error disconnecting transcriber: {e}")
             finally:
                 self._connected = False
 

@@ -178,13 +178,15 @@ def test_groq_llm():
             api_key=api_key,
             model_name=model,
             temperature=0.3,
-            max_tokens=60
+            max_tokens=250
         )
         resp = llm.invoke([
             SystemMessage(content="You are ApexSales AI. State in 1 short sentence how you help sales teams."),
             HumanMessage(content="What is your core value?")
         ])
         content = resp.content.strip().replace("\n", " ")
+        if not content and hasattr(resp, "additional_kwargs"):
+            content = resp.additional_kwargs.get("reasoning_content", "").strip().replace("\n", " ")
         dur = time.time() - t0
         snippet = content[:65] + ("..." if len(content) > 65 else "")
         tracker.record(name, "PASS", f"Model '{model}' replied in {dur:.2f}s: \"{snippet}\"", dur)

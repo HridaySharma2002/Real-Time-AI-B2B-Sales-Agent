@@ -29,10 +29,15 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 
+from dotenv import load_dotenv
+
 # Ensure root workspace is in sys.path
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
+
+load_dotenv(os.path.join(root_dir, ".env"))
+load_dotenv()
 
 from stt_service import get_transcriber, _get_tts_agent
 from agent_workflow import agent_app
@@ -297,14 +302,27 @@ async def websocket_audio_endpoint(websocket: WebSocket):
         while True:
             msg = await websocket.receive()
             if "bytes" in msg and msg["bytes"]:
-                if stt_connected:
-                    transcriber.stream(msg["bytes"])
+                transcriber.stream(msg["bytes"])
             elif "text" in msg and msg["text"]:
                 try:
                     import json
                     cmd = json.loads(msg["text"])
-                    if cmd.get("type") in ("end_turn", "silence") and stt_connected:
+                    cmd_type = cmd.get("type")
+                    if cmd_type in ("end_turn", "silence"):
                         transcriber.stream(b"\x00" * 32000)
+                    elif cmd_type == "start_call":
+                        if not transcriber._connected:
+                            try:
+                                transcriber.connect()
+                                await websocket.send_json({
+                                    "type": "transcriber_ready",
+                                    "session_id": session_id,
+                                    "message": "AI Speech Recognizer Ready"
+                                })
+                            except Exception as conn_err:
+                                logger.warning(f"Could not reconnect on start_call: {conn_err}")
+                    elif cmd_type == "ping":
+                        await websocket.send_json({"type": "pong"})
                 except Exception:
                     pass
             elif msg.get("type") == "websocket.disconnect":
@@ -314,9 +332,13 @@ async def websocket_audio_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket session error: {e}")
     finally:
-        if stt_connected:
-            try:
-                transcriber.close()
-            except Exception:
-                pass
+        try:
+            transcriber.close()
+        except Exception:
+            pass
         logger.info(f"Transcriber session closed: {session_id}")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

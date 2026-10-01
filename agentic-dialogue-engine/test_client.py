@@ -12,7 +12,7 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://127.0.0.1:8000/healthz"
 WS_URL = "ws://127.0.0.1:8000/ws/audio"
 AUDIO_FILE = os.path.join(os.path.dirname(__file__), "test_sample_16k.wav")
 

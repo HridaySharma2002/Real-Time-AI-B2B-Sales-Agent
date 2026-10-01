@@ -1020,6 +1020,9 @@
   // =========================================================================
   function resolveDefaultServer() {
     const origin = window.location.origin;
+    if (!origin || origin === "null" || origin.startsWith("file:")) {
+      return "http://localhost:8000";
+    }
     if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
       return "http://localhost:8000";
     }
@@ -1046,6 +1049,9 @@
   let callSeconds = 0;
   let analyser = null;
   let animFrame = null;
+  let userSpeakingInTurn = false;
+  let autoTurnTimer = null;
+  let lastSpokeTime = 0;
 
   // DOM Elements
   const dotWs = document.getElementById("dotWs");
@@ -1311,11 +1317,30 @@
         if (data.is_final) {
           textSpan.className = "";
           activeUserBubble = null;
+
+          // Display active thinking indicator so user knows Sarah is processing
+          let thinkingBubble = document.getElementById("agentThinkingBubble");
+          if (!thinkingBubble) {
+            thinkingBubble = document.createElement("div");
+            thinkingBubble.id = "agentThinkingBubble";
+            thinkingBubble.className = "chat-bubble agent";
+            thinkingBubble.style.opacity = "0.75";
+            thinkingBubble.innerHTML = `
+              <div class="bubble-author agent"><span>Sarah (ApexSales AI)</span><span class="bubble-time">Processing...</span></div>
+              <div style="font-style: italic;">Thinking and checking sales playbooks...</div>
+            `;
+            chatFeed.appendChild(thinkingBubble);
+            chatFeed.scrollTop = chatFeed.scrollHeight;
+          }
         }
       }
       chatFeed.scrollTop = chatFeed.scrollHeight;
 
     } else if (data.type === "agent_response") {
+      // Remove thinking indicator
+      const tb = document.getElementById("agentThinkingBubble");
+      if (tb) tb.remove();
+
       // Append AI Bubble
       const b = document.createElement("div");
       b.className = "chat-bubble agent";
@@ -1448,6 +1473,11 @@
       audioInput = audioContext.createMediaStreamSource(mediaStream);
       initVisualizer(audioInput);
 
+      // Send start_call to prepare/wake transcriber
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "start_call" }));
+      }
+
       scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
 
       scriptProcessor.onaudioprocess = (e) => {
@@ -1460,12 +1490,38 @@
           sum += Math.abs(inputData[i]);
         }
         const rms = Math.sqrt(sum / inputData.length);
-        if (rms > 0.015) {
+        const now = Date.now();
+
+        if (rms > 0.016) {
+          userSpeakingInTurn = true;
+          lastSpokeTime = now;
           dotMic.className = "status-dot pulse-red";
           textMic.textContent = "Mic: Speaking...";
+          if (autoTurnTimer) {
+            clearTimeout(autoTurnTimer);
+            autoTurnTimer = null;
+          }
         } else {
-          dotMic.className = "status-dot active";
-          textMic.textContent = "Mic: Listening...";
+          if (userSpeakingInTurn && !autoTurnTimer) {
+            // User paused speaking, start auto end-of-turn countdown (750ms)
+            autoTurnTimer = setTimeout(() => {
+              if (userSpeakingInTurn && isCallActive) {
+                userSpeakingInTurn = false;
+                dotMic.className = "status-dot speaking-pulse";
+                textMic.textContent = "Mic: Processing AI...";
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                  // Send 1 sec of silence PCM to AssemblyAI to guarantee turn completion
+                  ws.send(new Uint8Array(32000).buffer);
+                  ws.send(JSON.stringify({ type: "end_turn" }));
+                }
+              }
+              autoTurnTimer = null;
+            }, 750);
+          }
+          if (!userSpeakingInTurn) {
+            dotMic.className = "status-dot active";
+            textMic.textContent = "Mic: Listening...";
+          }
         }
 
         // Accurately downsample from native hardware rate to 16,000Hz PCM
@@ -1501,6 +1557,12 @@
     isCallActive = false;
     stopTimer();
 
+    if (autoTurnTimer) {
+      clearTimeout(autoTurnTimer);
+      autoTurnTimer = null;
+    }
+    userSpeakingInTurn = false;
+
     // Stop mic hardware stream
     if (mediaStream) {
       mediaStream.getTracks().forEach(t => t.stop());
@@ -1518,6 +1580,7 @@
     // Send 1 second of silence to AssemblyAI to explicitly complete the turn
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(new Uint8Array(32000).buffer);
+      ws.send(JSON.stringify({ type: "end_turn" }));
     }
 
     // Keep WebSocket connected so incoming AI voice response is received!
