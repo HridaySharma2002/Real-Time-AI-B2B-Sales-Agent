@@ -12,7 +12,7 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:
         pass
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "http://127.0.0.1:8000/healthz"
 WS_URL = "ws://127.0.0.1:8000/ws/audio"
 AUDIO_FILE = os.path.join(os.path.dirname(__file__), "test_sample_16k.wav")
 
@@ -38,6 +38,7 @@ async def run_websocket_test():
         print("      Connected to WebSocket successfully!")
         
         agent_responded = asyncio.Event()
+        transcriber_ready = asyncio.Event()
 
         async def receive_messages():
             try:
@@ -45,7 +46,10 @@ async def run_websocket_test():
                     msg = await ws.recv()
                     data = json.loads(msg)
                     msg_type = data.get("type")
-                    if msg_type == "transcript":
+                    if msg_type == "transcriber_ready":
+                        print("      AssemblyAI speech recognizer is active & ready!")
+                        transcriber_ready.set()
+                    elif msg_type == "transcript":
                         text = data.get("text", "")
                         is_final = data.get("is_final", False)
                         status = "[FINAL]" if is_final else "[PARTIAL]"
@@ -60,6 +64,12 @@ async def run_websocket_test():
                 print(f"      Receive error: {e}")
 
         recv_task = asyncio.create_task(receive_messages())
+
+        # Wait up to 10 seconds for transcriber_ready
+        try:
+            await asyncio.wait_for(transcriber_ready.wait(), timeout=10.0)
+        except asyncio.TimeoutError:
+            print("      Notice: transcriber_ready event not received; continuing with audio stream...")
 
         print(f"[3/3] Streaming audio from '{os.path.basename(AUDIO_FILE)}'...")
         with wave.open(AUDIO_FILE, "rb") as w:

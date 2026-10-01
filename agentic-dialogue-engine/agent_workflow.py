@@ -71,7 +71,7 @@ class AgentState(TypedDict):
 
 groq_api_key = os.getenv("GROQ_API_KEY")
 model_name = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
-llm = ChatGroq(model=model_name, temperature=0.1, api_key=groq_api_key) if groq_api_key else None
+llm = ChatGroq(model=model_name, temperature=0.1, api_key=groq_api_key, request_timeout=6.0, max_retries=1) if groq_api_key else None
 
 
 # =====================================================================
@@ -208,7 +208,12 @@ Rules for Real-Time Phone/Voice Response:
     if llm:
         try:
             response = llm.invoke(messages)
-            ai_text = response.content
+            ai_text = getattr(response, "content", "")
+            if not ai_text and hasattr(response, "additional_kwargs"):
+                ai_text = response.additional_kwargs.get("reasoning_content", "")
+            if not ai_text or not str(ai_text).strip():
+                ai_text = "We offer flexible Starter ($499/mo) and Enterprise ($3,500/mo) packages with sub-300ms SLA and CRM integrations. Would you be open to a 10-minute demo on Thursday?"
+            response = AIMessage(content=ai_text)
         except Exception as e:
             logger.error(f"Error invoking Groq LLM: {e}")
             ai_text = "I'd be delighted to walk you through our platform—we help teams scale outbound calls with sub-500ms voice AI. Would you be open to a 10-minute demo on Thursday?"

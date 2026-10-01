@@ -996,14 +996,14 @@
 
     <div class="modal-field">
       <label>FastAPI Backend URL (HTTP/HTTPS):</label>
-      <input type="text" class="modal-input" id="serverUrlInput" placeholder="https://your-backend.onrender.com or http://localhost:8000" />
+      <input type="text" class="modal-input" id="serverUrlInput" placeholder="https://real-time-ai-b2b-sales-agent.onrender.com or http://localhost:8000" />
     </div>
 
     <div class="modal-field">
       <label>Quick Presets:</label>
       <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
         <button class="chip-btn" id="presetLocal">Localhost (8000)</button>
-        <button class="chip-btn" id="presetRender">Render Template</button>
+        <button class="chip-btn" id="presetRender">Live Render Server</button>
       </div>
     </div>
 
@@ -1018,11 +1018,24 @@
   // =========================================================================
   // Config & State Management
   // =========================================================================
-  const DEFAULT_SERVER = window.location.origin.includes("localhost") || window.location.origin.includes("127.0.0.1")
-    ? window.location.origin
-    : window.location.origin;
+  function resolveDefaultServer() {
+    const origin = window.location.origin;
+    if (!origin || origin === "null" || origin.startsWith("file:")) {
+      return "http://localhost:8000";
+    }
+    if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+      return "http://localhost:8000";
+    }
+    return origin;
+  }
 
-  let backendServer = localStorage.getItem("apexsales_server_url") || DEFAULT_SERVER;
+  // Clear stale cached URLs from previous iterations
+  let savedServer = localStorage.getItem("apexsales_server_url");
+  if (savedServer && (savedServer.includes(":3000") || savedServer.includes("apexsales-backend.onrender.com"))) {
+    savedServer = null;
+    localStorage.removeItem("apexsales_server_url");
+  }
+  let backendServer = savedServer || resolveDefaultServer();
 
   let ws = null;
   let audioContext = null;
@@ -1036,6 +1049,9 @@
   let callSeconds = 0;
   let analyser = null;
   let animFrame = null;
+  let userSpeakingInTurn = false;
+  let autoTurnTimer = null;
+  let lastSpokeTime = 0;
 
   // DOM Elements
   const dotWs = document.getElementById("dotWs");
@@ -1208,16 +1224,27 @@
     }
   }
 
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.getVoices();
+    };
+  }
+
   function speakWithWebSpeech(text) {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
 
     const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1.0;
+    utter.rate = 1.05;
     utter.pitch = 1.0;
 
     const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(v => v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Jenny") || v.name.includes("Google") || v.name.includes("Samantha"))) || voices[0];
+    let preferred = null;
+    if (voices && voices.length > 0) {
+      preferred = voices.find(v => (v.lang.startsWith("en") || v.lang.startsWith("en-US")) && 
+        (v.name.includes("Natural") || v.name.includes("Jenny") || v.name.includes("Google") || v.name.includes("Samantha") || v.name.includes("Zira"))) || 
+        voices.find(v => v.lang.startsWith("en")) || voices[0];
+    }
     if (preferred) utter.voice = preferred;
 
     dotSpeaker.className = "status-dot speaking-pulse";
@@ -1260,8 +1287,8 @@
 
       ws.onerror = (e) => {
         dotWs.className = "status-dot";
-        textWs.textContent = "WebSocket: Error";
-        reject(e);
+        textWs.textContent = "WebSocket: Offline";
+        reject(new Error("Unable to connect to WebSocket server at: " + url));
       };
 
       ws.onclose = () => {
@@ -1283,6 +1310,11 @@
   let activeUserBubble = null;
 
   function handleServerMessage(data) {
+    if (data.type === "transcriber_ready") {
+      dotWs.className = "status-dot active";
+      textWs.textContent = "WebSocket: Online & Ready";
+      return;
+    }
     if (data.type === "transcript") {
       if (!activeUserBubble) {
         activeUserBubble = document.createElement("div");
@@ -1296,11 +1328,30 @@
         if (data.is_final) {
           textSpan.className = "";
           activeUserBubble = null;
+
+          // Display active thinking indicator so user knows Sarah is processing
+          let thinkingBubble = document.getElementById("agentThinkingBubble");
+          if (!thinkingBubble) {
+            thinkingBubble = document.createElement("div");
+            thinkingBubble.id = "agentThinkingBubble";
+            thinkingBubble.className = "chat-bubble agent";
+            thinkingBubble.style.opacity = "0.75";
+            thinkingBubble.innerHTML = `
+              <div class="bubble-author agent"><span>Sarah (ApexSales AI)</span><span class="bubble-time">Processing...</span></div>
+              <div style="font-style: italic;">Thinking and checking sales playbooks...</div>
+            `;
+            chatFeed.appendChild(thinkingBubble);
+            chatFeed.scrollTop = chatFeed.scrollHeight;
+          }
         }
       }
       chatFeed.scrollTop = chatFeed.scrollHeight;
 
     } else if (data.type === "agent_response") {
+      // Remove thinking indicator
+      const tb = document.getElementById("agentThinkingBubble");
+      if (tb) tb.remove();
+
       // Append AI Bubble
       const b = document.createElement("div");
       b.className = "chat-bubble agent";
@@ -1333,57 +1384,195 @@
 
       // Play audio
       playTTSAudio(data.audio_base64, data.text);
+    } else if (data.type === "agent_audio") {
+      // Background studio audio arrived: attach replay button to latest agent bubble
+      const bubbles = chatFeed.querySelectorAll(".chat-bubble.agent");
+      if (bubbles.length > 0) {
+        const lastBubble = bubbles[bubbles.length - 1];
+        if (!lastBubble.querySelector(".bubble-replay-btn") && data.audio_base64) {
+          const replayBtn = document.createElement("button");
+          replayBtn.className = "bubble-replay-btn";
+          replayBtn.innerHTML = `▶ Replay Studio Audio`;
+          replayBtn.onclick = () => playTTSAudio(data.audio_base64, data.text);
+          lastBubble.appendChild(replayBtn);
+        }
+      }
     }
+  }
+
+  // =========================================================================
+  // Accurate 16kHz PCM Resampler
+  // =========================================================================
+  function downsampleTo16k(inputBuffer, sampleRate) {
+    if (sampleRate === 16000) {
+      const pcm16 = new Int16Array(inputBuffer.length);
+      for (let i = 0; i < inputBuffer.length; i++) {
+        let s = Math.max(-1, Math.min(1, inputBuffer[i]));
+        pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return pcm16;
+    }
+    const ratio = sampleRate / 16000;
+    const newLength = Math.round(inputBuffer.length / ratio);
+    const result = new Int16Array(newLength);
+    let offsetResult = 0;
+    let offsetBuffer = 0;
+    while (offsetResult < newLength) {
+      const nextOffsetBuffer = Math.round((offsetResult + 1) * ratio);
+      let accum = 0, count = 0;
+      for (let i = offsetBuffer; i < nextOffsetBuffer && i < inputBuffer.length; i++) {
+        accum += inputBuffer[i];
+        count++;
+      }
+      const sample = count > 0 ? (accum / count) : 0;
+      const clamped = Math.max(-1, Math.min(1, sample));
+      result[offsetResult] = clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF;
+      offsetResult++;
+      offsetBuffer = nextOffsetBuffer;
+    }
+    return result;
   }
 
   // =========================================================================
   // Microphone Stream & ScriptProcessor for 16kHz PCM
   // =========================================================================
   async function startCall() {
+    // 1. Ensure WebSocket is connected before trying to capture mic
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      dotWs.className = "status-dot pulse-red";
+      textWs.textContent = "WebSocket: Connecting...";
+      try {
+        await connectWebSocket();
+      } catch (wsErr) {
+        dotWs.className = "status-dot";
+        textWs.textContent = "WebSocket: Offline";
+        alert("Cannot connect to AI Sales Server at: " + backendServer + "\n\nPlease ensure the backend is running on port 8000, or click '⚙️' to configure the URL.");
+        return;
+      }
+    }
+
+    // 2. Check if browser supports mediaDevices / getUserMedia (requires localhost or HTTPS)
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Microphone Access Error:\nYour browser does not permit microphone access on this URL.\n\nBrowsers strictly require 'http://localhost' or 'https://' to allow microphone capture.\nPlease open http://localhost:8000/test or http://localhost:3000.");
+      return;
+    }
+
+    // 3. Initialize AudioContext
     try {
       if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
       if (audioContext.state === "suspended") await audioContext.resume();
+    } catch (ctxErr) {
+      console.warn("AudioContext init warning:", ctxErr);
+    }
 
-      if (!ws || ws.readyState !== WebSocket.OPEN) {
-        await connectWebSocket();
+    // 4. Request MediaStream with fallback
+    try {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
+      } catch (conErr) {
+        console.warn("Specific constraints rejected, falling back to basic audio capture:", conErr);
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      }
+    } catch (micErr) {
+      console.error("Microphone Access Error:", micErr);
+      let errorMsg = "Could not access microphone.";
+      if (micErr.name === "NotAllowedError" || micErr.name === "PermissionDeniedError") {
+        errorMsg = "Microphone Permission Denied:\nPlease click the lock or settings icon in your browser address bar and set Microphone to 'Allow'.";
+      } else if (micErr.name === "NotFoundError" || micErr.name === "DevicesNotFoundError") {
+        errorMsg = "No Microphone Detected:\nPlease connect a microphone or headset and try again.";
+      } else if (micErr.name === "NotReadableError" || micErr.name === "TrackStartError") {
+        errorMsg = "Microphone In Use:\nYour microphone is being used by another application (Zoom, Teams, etc.).";
+      } else {
+        errorMsg = "Microphone Access Error: " + (micErr.message || micErr.name || String(micErr));
+      }
+      alert(errorMsg);
+      stopCall();
+      return;
+    }
+
+    // 5. Connect stream & ScriptProcessor
+    try {
+      audioInput = audioContext.createMediaStreamSource(mediaStream);
+      initVisualizer(audioInput);
+
+      // Send start_call to prepare/wake transcriber
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "start_call" }));
       }
 
-      mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1, sampleRate: 16000, echoCancellation: true, noiseSuppression: true }
-      });
-
-      audioInput = audioContext.createMediaStreamSource(mediaStream);
       scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
-
-      initVisualizer(audioInput);
 
       scriptProcessor.onaudioprocess = (e) => {
         if (!isCallActive || isMuted) return;
         const inputData = e.inputBuffer.getChannelData(0);
-        // Downsample/convert to Int16 PCM
-        const pcm16 = new Int16Array(inputData.length);
+
+        // Calculate speech energy RMS
+        let sum = 0;
         for (let i = 0; i < inputData.length; i++) {
-          let s = Math.max(-1, Math.min(1, inputData[i]));
-          pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          sum += Math.abs(inputData[i]);
         }
+        const rms = Math.sqrt(sum / inputData.length);
+        const now = Date.now();
+
+        if (rms > 0.016) {
+          userSpeakingInTurn = true;
+          lastSpokeTime = now;
+          dotMic.className = "status-dot pulse-red";
+          textMic.textContent = "Mic: Speaking...";
+          if (autoTurnTimer) {
+            clearTimeout(autoTurnTimer);
+            autoTurnTimer = null;
+          }
+        } else {
+          if (userSpeakingInTurn && !autoTurnTimer) {
+            // User paused speaking, start auto end-of-turn countdown (750ms)
+            autoTurnTimer = setTimeout(() => {
+              if (userSpeakingInTurn && isCallActive) {
+                userSpeakingInTurn = false;
+                dotMic.className = "status-dot speaking-pulse";
+                textMic.textContent = "Mic: Processing AI...";
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                  // Send 1 sec of silence PCM to AssemblyAI to guarantee turn completion
+                  ws.send(new Uint8Array(32000).buffer);
+                  ws.send(JSON.stringify({ type: "end_turn" }));
+                }
+              }
+              autoTurnTimer = null;
+            }, 750);
+          }
+          if (!userSpeakingInTurn) {
+            dotMic.className = "status-dot active";
+            textMic.textContent = "Mic: Listening...";
+          }
+        }
+
+        // Accurately downsample from native hardware rate to 16,000Hz PCM
+        const pcm16 = downsampleTo16k(inputData, audioContext.sampleRate);
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(pcm16.buffer);
         }
       };
 
+      // Connect to zero-gain node to prevent microphone feedback loop into speaker
+      const muteGain = audioContext.createGain();
+      muteGain.gain.value = 0;
       audioInput.connect(scriptProcessor);
-      scriptProcessor.connect(audioContext.destination);
+      scriptProcessor.connect(muteGain);
+      muteGain.connect(audioContext.destination);
 
       isCallActive = true;
       btnStartCall.className = "btn-call-main active-call";
-      callBtnText.textContent = "End Voice Call";
+      callBtnText.textContent = "Done Speaking / Send";
       btnMuteToggle.disabled = false;
-      dotMic.className = "status-dot pulse-red";
-      textMic.textContent = "Mic: Live Recording";
+      dotMic.className = "status-dot active";
+      textMic.textContent = "Mic: Listening...";
 
       startTimer();
     } catch (err) {
-      alert("Microphone Access Error: " + err.message);
+      console.error("Audio pipeline initialization error:", err);
+      alert("Audio Initialization Error: " + (err.message || err.name || String(err)));
       stopCall();
     }
   }
@@ -1392,6 +1581,13 @@
     isCallActive = false;
     stopTimer();
 
+    if (autoTurnTimer) {
+      clearTimeout(autoTurnTimer);
+      autoTurnTimer = null;
+    }
+    userSpeakingInTurn = false;
+
+    // Stop mic hardware stream
     if (mediaStream) {
       mediaStream.getTracks().forEach(t => t.stop());
       mediaStream = null;
@@ -1404,16 +1600,19 @@
       audioInput.disconnect();
       audioInput = null;
     }
-    if (ws) {
-      ws.close();
-      ws = null;
+
+    // Send 1 second of silence to AssemblyAI to explicitly complete the turn
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(new Uint8Array(32000).buffer);
+      ws.send(JSON.stringify({ type: "end_turn" }));
     }
 
+    // Keep WebSocket connected so incoming AI voice response is received!
     btnStartCall.className = "btn-call-main";
     callBtnText.textContent = "Start Real-Time Call";
     btnMuteToggle.disabled = true;
     dotMic.className = "status-dot";
-    textMic.textContent = "Mic: Idle";
+    textMic.textContent = "Mic: Processing AI...";
     if (animFrame) cancelAnimationFrame(animFrame);
   }
 
@@ -1555,7 +1754,7 @@
     serverUrlInput.value = "http://localhost:8000";
   });
   presetRender.addEventListener("click", () => {
-    serverUrlInput.value = "https://apexsales-backend.onrender.com";
+    serverUrlInput.value = "https://real-time-ai-b2b-sales-agent.onrender.com";
   });
 
   // Auto connect on load

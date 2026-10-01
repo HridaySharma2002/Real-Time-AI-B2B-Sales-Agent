@@ -1,85 +1,104 @@
-# 🚀 Deployment Guide — ApexSales AI
+# 🚀 Render Deployment & MongoDB Atlas Setup Guide — ApexSales AI
 
-This guide explains how to deploy **ApexSales AI** across **Render** (Backend FastAPI + AI Agents) and **Netlify** (Edge Royal Light Mode Frontend).
+This guide explains how to deploy **ApexSales AI** as a unified full-stack application entirely on **Render** (Frontend UI + WebSocket Audio Gateway + LangGraph Reasoning + ChromaDB RAG), and how to connect **MongoDB Atlas** seamlessly.
 
 ---
 
-## 🏗️ Architecture Overview
+## 🏗️ Unified Render Architecture
 ```text
-[ Browser / Netlify Frontend ]
-        │  (WebSocket + REST)
+[ Browser (Chrome / Edge / Firefox) ]
+        │
+        │ HTTPS (Web UI & REST APIs) + WSS (Real-Time Audio Streams)
         ▼
-[ Render Web Service (FastAPI) ]
-  ├── AssemblyAI Real-Time STT
-  ├── LangGraph Agent (Groq / Gemini)
-  ├── Edge-TTS Neural Voice (Jenny / Guy)
-  ├── ChromaDB RAG Knowledge Vector Store
-  └── Non-Blocking Telemetry (Redis / MongoDB / Spring)
+[ Render Web Service: real-time-ai-b2b-sales-agent ]
+  ├── GET / (Unified Sales Console Web UI)
+  ├── WS /ws/audio (AssemblyAI 16kHz Real-Time STT Gateway)
+  ├── POST /api/chat (LangGraph Multi-Step Reasoning Engine)
+  ├── GET /api/rag/query (Persistent ChromaDB Vector Knowledge Store)
+  ├── Edge-TTS Neural Voice Synthesis (Jenny / Guy)
+  └── Telemetry Node -> Live MongoDB Atlas (`apexsales_db`)
 ```
 
 ---
 
-## Part 1: Deploy Backend to Render
+## Part 1: Fix MongoDB Atlas Connection
 
-### Option A: Via Blueprint (`render.yaml`)
-1. Push this repository to your GitHub account.
-2. Log into [Render Dashboard](https://dashboard.render.com/).
-3. Click **New +** → **Blueprint**.
-4. Connect this GitHub repository. Render will automatically detect [`render.yaml`](file:///C:/Users/USER/Desktop/AI-B2B-Sales_Agent/Real-Time-AI-B2B-Sales-Agent/render.yaml).
-5. In the Environment Variables section, fill in your secret keys:
-   - `ASSEMBLYAI_API_KEY`: Your AssemblyAI API key
-   - `GROQ_API_KEY`: Your Groq API key
-   - `MONGODB_URI`: Your MongoDB Atlas connection URI
-   - `MONGODB_USERNAME`: Your MongoDB username
-   - `MONGODB_PASSWORD`: Your MongoDB password
-6. Click **Apply**. Render will install dependencies and start the uvicorn server.
-7. Once deployed, copy your backend URL:
-   `https://<your-app-name>.onrender.com`
+If MongoDB Atlas is rejecting connections with `[SSL: TLSV1_ALERT_INTERNAL_ERROR]`, it is because **the incoming IP address is blocked in Atlas Network Access**.
 
-### Option B: Manual Web Service
-- **Runtime:** Python
-- **Build Command:** `pip install -r requirements.txt`
-- **Start Command:** `python -m uvicorn main:app --app-dir agentic-dialogue-engine --host 0.0.0.0 --port $PORT`
-- **Environment Variables:** Add keys from `.env.example`
+Follow these exact steps:
+
+1. Log into [MongoDB Atlas](https://cloud.mongodb.com/).
+2. Select your Project and Cluster (`Cluster0`).
+3. In the left navigation menu, click **Network Access** (under **Security**).
+4. Click the green **+ Add IP Address** button.
+5. Click **Allow Access From Anywhere** (this automatically sets IP `0.0.0.0/0`).
+6. Click **Confirm**.
+7. Wait 30–60 seconds until the status shows **Active**.
+
+### Verify Database User Credentials
+1. In the left menu, click **Database Access**.
+2. Ensure user `kshriday_db_user` exists and has **Read and write to any database** privileges.
+3. If you ever update the password, update it in Render and `.env`.
 
 ---
 
-## Part 2: Deploy Frontend to Netlify
+## Part 2: Deploy to Render (Unified Full-Stack)
 
-### Option A: Netlify Git Integration
-1. Log into [Netlify](https://app.netlify.com/).
-2. Click **Add new site** → **Import an existing project**.
-3. Connect your GitHub repository.
-4. Set the build settings:
-   - **Base directory:** Leave blank
-   - **Package directory / Publish directory:** `frontend`
-5. Click **Deploy Site**.
-6. Netlify will deploy your site in ~10 seconds. You will get a URL like `https://<your-site>.netlify.app`.
+Render hosts both your frontend UI and backend services together on a single URL:
+**`https://real-time-ai-b2b-sales-agent.onrender.com/`**
 
-### Option B: Netlify Drop (Zero Configuration)
-1. In your local workspace, locate the [`frontend`](file:///C:/Users/USER/Desktop/AI-B2B-Sales_Agent/Real-Time-AI-B2B-Sales-Agent/frontend) directory.
-2. Go to [Netlify Drop](https://app.netlify.com/drop).
-3. Drag and drop the `frontend` folder directly into the browser.
-4. Your UI will be live instantly!
+### Step 1: Render Web Service Configuration
+- **Repository:** `HridaySharma2002/Real-Time-AI-B2B-Sales-Agent`
+- **Environment:** `Python`
+- **Region:** `Oregon (US West)`
+- **Branch:** `main`
+- **Build Command:**
+  ```bash
+  pip install -r requirements.txt
+  ```
+- **Start Command:**
+  ```bash
+  python -m uvicorn main:app --app-dir agentic-dialogue-engine --host 0.0.0.0 --port $PORT
+  ```
+- **Health Check Path:**
+  ```text
+  /api/health
+  ```
+
+### Step 2: Configure Environment Variables in Render Dashboard
+Go to your Render Web Service -> **Environment** tab and ensure the following variables are present:
+
+| Key | Recommended Value |
+|---|---|
+| `PYTHON_VERSION` | `3.11.9` |
+| `ASSEMBLYAI_API_KEY` | `your_assemblyai_api_key_from_env` |
+| `GROQ_API_KEY` | `your_groq_api_key_from_env` |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` |
+| `MONGODB_URI` | `mongodb+srv://<username>:<password>@cluster0.1nsmy0e.mongodb.net/apexsales_db?retryWrites=true&w=majority&appName=Cluster0` |
+| `MONGODB_USERNAME` | `<your_mongodb_username>` |
+| `MONGODB_PASSWORD` | `<your_mongodb_password>` |
 
 ---
 
-## Part 3: Connect Frontend to Backend
+## Part 3: Live Verification & Testing
 
-1. Open your deployed Netlify frontend in your browser.
-2. Click the **"⚙️ Cloud Server"** button in the top navigation bar.
-3. Enter your deployed Render backend URL:
-   `https://<your-backend-name>.onrender.com`
-4. Click **Save & Connect**.
-5. The frontend will automatically convert `https://` into `wss://` for real-time audio streaming, and remember your choice across browser reloads via `localStorage`.
-6. Click **Start Real-Time Call** and speak through your microphone!
+Once Render completes deploying:
 
----
-
-## Part 4: Local Development & Testing
-
-Run backend locally:
-```powershell
-python -m uvicorn main:app --app-dir agentic-dialogue-engine --host 0.0.0.0 --port 8000
-```
-Open **`http://localhost:8000/test`** to view the live Edge Royal Light Mode UI directly from your local server.
+1. Open your live application in your browser:
+   **`https://real-time-ai-b2b-sales-agent.onrender.com/`**
+2. You will see the **ApexSales AI Interactive Sales Console**.
+3. Check status indicators:
+   - **WebSocket:** Connected (Green dot)
+   - **Mic:** Ready
+4. Check system health and MongoDB connectivity:
+   **`https://real-time-ai-b2b-sales-agent.onrender.com/api/health`**
+   ```json
+   {
+     "status": "healthy",
+     "mongodb_connected": true,
+     "platform": "ApexSales AI Real-Time B2B Sales Agent"
+   }
+   ```
+5. Test live audio:
+   - Click **"Test Sample Audio"** to stream 16kHz PCM audio without a microphone.
+   - Click **"Start Real-Time Call"** to talk with the AI sales agent live via your microphone.

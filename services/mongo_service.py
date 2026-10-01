@@ -30,15 +30,44 @@ LOCAL_LEADS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".lo
 
 
 def _resolve_mongo_uri(raw_uri: Optional[str] = None) -> Optional[str]:
-    uri = raw_uri or os.getenv("MONGODB_URI")
-    user = os.getenv("MONGODB_USERNAME")
-    pw = os.getenv("MONGODB_PASSWORD")
-    if uri and user and pw:
-        enc_u = urllib.parse.quote_plus(user)
-        enc_p = urllib.parse.quote_plus(pw)
-        if "<db_username>" in uri or "<db_password>" in uri:
-            uri = uri.replace("<db_username>", enc_u).replace("<db_password>", enc_p)
+    uri = (
+        raw_uri
+        or os.getenv("MONGODB_URI")
+        or os.getenv("mongodb_uri")
+        or os.getenv("MONGO_URI")
+    )
+    user = (
+        os.getenv("MONGODB_USERNAME")
+        or os.getenv("MONGODB_Username")
+        or os.getenv("mongodb_username")
+        or os.getenv("MONGO_USER")
+    )
+    pw = (
+        os.getenv("MONGODB_PASSWORD")
+        or os.getenv("MONGODB_password")
+        or os.getenv("mongodb_password")
+        or os.getenv("MONGO_PASS")
+    )
+    if uri:
+        if user and pw:
+            enc_u = urllib.parse.quote_plus(str(user))
+            enc_p = urllib.parse.quote_plus(str(pw))
+            if "<db_username>" in uri or "<db_password>" in uri:
+                uri = uri.replace("<db_username>", enc_u).replace("<db_password>", enc_p)
+        # Ensure database name is included before query parameters if pointing to cluster root
+        if ".mongodb.net/?" in uri:
+            uri = uri.replace(".mongodb.net/?", ".mongodb.net/apexsales_db?")
+        elif ".mongodb.net" in uri and not re_has_db(uri):
+            pass
     return uri
+
+
+def re_has_db(uri: str) -> bool:
+    try:
+        path = uri.split(".mongodb.net/")[1].split("?")[0]
+        return len(path.strip()) > 0
+    except Exception:
+        return False
 
 
 class MongoDBService:
@@ -62,40 +91,60 @@ class MongoDBService:
             return
 
         def _try_connect():
+            from pymongo import MongoClient
+
+            client = None
+            # Attempt 1: Standard connection with certifi CA bundle
             try:
                 import certifi
-                from pymongo import MongoClient
-
                 client = MongoClient(
                     self.uri,
                     tlsCAFile=certifi.where(),
-                    serverSelectionTimeoutMS=2000,
-                    connectTimeoutMS=2000,
-                    socketTimeoutMS=2000
+                    serverSelectionTimeoutMS=3000,
+                    connectTimeoutMS=3000,
+                    socketTimeoutMS=3000
                 )
                 client.admin.command('ping')
+            except Exception as e1:
+                # Attempt 2: Fallback with tlsAllowInvalidCertificates for environments with cert-store discrepancies
+                try:
+                    client = MongoClient(
+                        self.uri,
+                        tls=True,
+                        tlsAllowInvalidCertificates=True,
+                        serverSelectionTimeoutMS=3000,
+                        connectTimeoutMS=3000,
+                        socketTimeoutMS=3000
+                    )
+                    client.admin.command('ping')
+                except Exception as e2:
+                    err_str = f"{e1} | {e2}"
+                    if "TLSV1_ALERT_INTERNAL_ERROR" in err_str or "SSL" in err_str:
+                        logger.warning(
+                            "MongoDB Atlas rejected TLS handshake. Most common cause: IP not whitelisted in Atlas Network Access. "
+                            "Go to MongoDB Atlas -> Network Access -> Add IP Address '0.0.0.0/0' (Allow Access Anywhere). "
+                            f"Resilient failover active: saving leads locally to '{LOCAL_LEADS_FILE}'."
+                        )
+                    else:
+                        logger.warning(
+                            f"MongoDB Atlas unreachable ({type(e2).__name__}). Using local persistence failover at '{LOCAL_LEADS_FILE}'."
+                        )
+                    self._connected = False
+                    return
+
+            if client:
                 self.client = client
                 self.db = client.get_database("apexsales_db")
                 self._connected = True
                 logger.info("Connected successfully to MongoDB Atlas database 'apexsales_db'.")
-            except Exception as e:
-                err_str = str(e)
-                if "TLSV1_ALERT_INTERNAL_ERROR" in err_str or "SSL" in err_str:
-                    logger.warning(
-                        "MongoDB Atlas rejected TLS handshake (IP address not whitelisted in Atlas Network Access). "
-                        f"Resilient failover active: saving leads locally to '{LOCAL_LEADS_FILE}'."
-                    )
-                else:
-                    logger.warning(f"MongoDB Atlas unreachable ({type(e).__name__}). Using local persistence failover at '{LOCAL_LEADS_FILE}'.")
-                self._connected = False
 
         import threading
         t = threading.Thread(target=_try_connect, daemon=True)
         t.start()
-        t.join(timeout=3.0)
+        t.join(timeout=4.0)
         if t.is_alive():
             logger.warning(
-                "MongoDB Atlas connection timed out after 3.0s (awaiting IP whitelist in Atlas Network Access). "
+                "MongoDB Atlas connection timed out after 4.0s (ensure '0.0.0.0/0' is added to Atlas Network Access). "
                 f"Resilient failover active: saving leads locally to '{LOCAL_LEADS_FILE}'."
             )
             self._connected = False
@@ -118,17 +167,30 @@ class MongoDBService:
         except Exception as e:
             logger.error(f"Error saving local lead record: {e}")
 
-    def save_lead(self, lead_data: Dict[str, Any]) -> str:
-        """Saves or updates a lead document."""
-        lead_id = lead_data.get("lead_id") or f"lead_{int(time.time())}"
-        lead_data["lead_id"] = lead_id
-        lead_data["updated_at"] = datetime.now().isoformat()
+    def save_lead(self, lead_data_or_id: Any, lead_data: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Saves or updates a lead document.
+        Supports both save_lead(dict) and save_lead(lead_id, dict) signatures.
+        """
+        if isinstance(lead_data_or_id, str):
+            data = dict(lead_data or {})
+            data["lead_id"] = lead_data_or_id
+        elif isinstance(lead_data_or_id, dict):
+            data = dict(lead_data_or_id)
+            if lead_data and isinstance(lead_data, dict):
+                data.update(lead_data)
+        else:
+            data = dict(lead_data or {})
+
+        lead_id = data.get("lead_id") or f"lead_{int(time.time())}"
+        data["lead_id"] = lead_id
+        data["updated_at"] = datetime.now().isoformat()
 
         if self._connected and self.db is not None:
             try:
                 self.db.leads.update_one(
                     {"lead_id": lead_id},
-                    {"$set": lead_data},
+                    {"$set": data},
                     upsert=True
                 )
                 logger.info(f"Saved lead '{lead_id}' to MongoDB Atlas.")
@@ -136,7 +198,7 @@ class MongoDBService:
             except Exception as e:
                 logger.warning(f"Error saving lead to MongoDB Atlas: {e}. Falling back to local storage.")
 
-        self._save_local_record("leads", lead_data)
+        self._save_local_record("leads", data)
         logger.info(f"Saved lead '{lead_id}' to local database.")
         return lead_id
 

@@ -29,10 +29,15 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 
+from dotenv import load_dotenv
+
 # Ensure root workspace is in sys.path
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
+
+load_dotenv(os.path.join(root_dir, ".env"))
+load_dotenv()
 
 from stt_service import get_transcriber, _get_tts_agent
 from agent_workflow import agent_app
@@ -87,18 +92,40 @@ class LeadCreateRequest(BaseModel):
 
 @app.get("/")
 def read_root(request: Request):
-    accept_header = request.headers.get("accept", "")
-    if "text/html" in accept_header:
-        html_file = os.path.join(os.path.dirname(__file__), "test_ui.html")
-        if os.path.exists(html_file):
-            with open(html_file, "r", encoding="utf-8") as f:
-                return HTMLResponse(content=f.read())
+    """Serves the Unified Interactive Sales Console Web UI."""
+    # Check frontend/index.html first (Unified Single-Deployment)
+    frontend_html = os.path.join(root_dir, "frontend", "index.html")
+    if os.path.exists(frontend_html):
+        with open(frontend_html, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    # Fallback to local test_ui.html
+    html_file = os.path.join(os.path.dirname(__file__), "test_ui.html")
+    if os.path.exists(html_file):
+        with open(html_file, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse("<h1>ApexSales AI Real-Time B2B Sales Agent</h1><p>Web UI file not found.</p>")
+
+
+@app.get("/test", response_class=HTMLResponse)
+def get_test_page(request: Request):
+    """Direct alias to the Interactive Sales Console Web UI."""
+    return read_root(request)
+
+
+@app.get("/healthz")
+@app.get("/api/health")
+def get_health_status():
+    """Health check endpoint for Render and infrastructure monitoring."""
+    db = get_mongo_service()
+    cache = get_redis_cache()
     return JSONResponse(content={
-        "status": "running",
+        "status": "healthy",
         "platform": "ApexSales AI Real-Time B2B Sales Agent",
         "version": "2.0.0",
+        "mongodb_connected": db.is_connected(),
+        "redis_connected": cache.is_available(),
         "endpoints": {
-            "sales_console_ui": "/test",
+            "sales_console_ui": "/",
             "audio_websocket": "/ws/audio",
             "text_chat_api": "/api/chat",
             "leads_api": "/api/leads",
@@ -107,15 +134,6 @@ def read_root(request: Request):
             "analytics_api": "/api/analytics"
         }
     })
-
-
-@app.get("/test", response_class=HTMLResponse)
-def get_test_page():
-    html_file = os.path.join(os.path.dirname(__file__), "test_ui.html")
-    if os.path.exists(html_file):
-        with open(html_file, "r", encoding="utf-8") as f:
-            return f.read()
-    return "<h1>Test UI file not found</h1>"
 
 
 @app.get("/sample-audio")
@@ -128,22 +146,30 @@ def get_sample_audio():
 
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
-    """Direct text chat endpoint running full LangGraph reasoning + TTS."""
-    result = agent_app.invoke({
-        "messages": [HumanMessage(content=req.message)],
-        "session_id": req.session_id,
-        "lead_id": req.lead_id
-    })
+    """Direct text chat endpoint running full LangGraph reasoning + TTS non-blocking."""
+    def _run_agent():
+        return agent_app.invoke({
+            "messages": [HumanMessage(content=req.message)],
+            "session_id": req.session_id,
+            "lead_id": req.lead_id
+        })
 
-    reply_text = result["messages"][-1].content
+    result = await asyncio.to_thread(_run_agent)
+    agent_msg = result["messages"][-1]
+    reply_text = getattr(agent_msg, "content", "")
+    if not reply_text and hasattr(agent_msg, "additional_kwargs"):
+        reply_text = agent_msg.additional_kwargs.get("reasoning_content", "")
+    if not reply_text or not str(reply_text).strip():
+        reply_text = "We offer flexible Starter ($499/mo) and Enterprise ($3,500/mo) packages with sub-300ms SLA and CRM integrations. Would you be open to a 10-minute demo on Thursday?"
     audio_base64 = None
 
     if req.synthesize_audio:
         tts = _get_tts_agent()
         if tts:
             try:
-                wav_bytes = tts.synthesize_to_wav_bytes(reply_text)
-                audio_base64 = base64.b64encode(wav_bytes).decode("ascii")
+                wav_bytes = await asyncio.to_thread(tts.synthesize_to_wav_bytes, reply_text)
+                if wav_bytes:
+                    audio_base64 = base64.b64encode(wav_bytes).decode("ascii")
             except Exception as e:
                 logger.warning(f"Chat TTS synthesis error: {e}")
 
@@ -244,12 +270,15 @@ async def websocket_audio_endpoint(websocket: WebSocket):
             else:
                 msg["text"] = str(payload)
 
-            asyncio.run_coroutine_threadsafe(
+            fut = asyncio.run_coroutine_threadsafe(
                 websocket.send_json(msg),
                 loop
             )
+            fut.add_done_callback(
+                lambda f: logger.error(f"WebSocket send_json failed: {f.exception()}") if f.exception() else None
+            )
         except Exception as e:
-            logger.error(f"Error sending agent response payload: {e}")
+            logger.error(f"Error scheduling agent response payload: {e}")
 
     transcriber = get_transcriber(
         on_transcript=send_transcript,
@@ -259,24 +288,65 @@ async def websocket_audio_endpoint(websocket: WebSocket):
         lead_id=lead_id
     )
     
+    stt_connected = False
     try:
         transcriber.connect()
+        stt_connected = True
         logger.info(f"AssemblyAI Transcriber connected for WebSocket session: {session_id}")
-    except Exception as e:
-        logger.error(f"Failed to connect AssemblyAI Transcriber: {e}")
         await websocket.send_json({
-            "type": "error",
-            "message": f"STT Connection Error: {str(e)}"
+            "type": "transcriber_ready",
+            "session_id": session_id,
+            "message": "AI Speech Recognizer Ready"
+        })
+    except Exception as e:
+        logger.warning(f"AssemblyAI Transcriber unavailable ({e}). WebSocket remains active for text and playback.")
+        await websocket.send_json({
+            "type": "stt_status",
+            "connected": False,
+            "message": "Real-time speech recognition is in standby. Text chat and sample audio remain operational."
         })
 
     try:
         while True:
-            data = await websocket.receive_bytes()
-            transcriber.stream(data)
+            msg = await websocket.receive()
+            if "bytes" in msg and msg["bytes"]:
+                transcriber.stream(msg["bytes"])
+            elif "text" in msg and msg["text"]:
+                try:
+                    import json
+                    cmd = json.loads(msg["text"])
+                    cmd_type = cmd.get("type")
+                    if cmd_type in ("end_turn", "silence"):
+                        transcriber.stream(b"\x00" * 32000)
+                    elif cmd_type == "start_call":
+                        if not transcriber._connected:
+                            try:
+                                transcriber.connect()
+                                await websocket.send_json({
+                                    "type": "transcriber_ready",
+                                    "session_id": session_id,
+                                    "message": "AI Speech Recognizer Ready"
+                                })
+                            except Exception as conn_err:
+                                logger.warning(f"Could not reconnect on start_call: {conn_err}")
+                    elif cmd_type == "ping":
+                        await websocket.send_json({"type": "pong"})
+                except Exception:
+                    pass
+            elif msg.get("type") == "websocket.disconnect":
+                break
     except WebSocketDisconnect:
         logger.info(f"WebSocket client disconnected: {session_id}")
     except Exception as e:
         logger.error(f"WebSocket session error: {e}")
     finally:
-        transcriber.close()
+        try:
+            transcriber.close()
+        except Exception:
+            pass
         logger.info(f"Transcriber session closed: {session_id}")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

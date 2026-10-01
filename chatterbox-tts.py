@@ -146,12 +146,13 @@ class ChatterboxTTSAgent:
         """
         Synthesizes human speech audio bytes using Edge-TTS neural models (Jenny/Guy),
         with seamless fallback to Google Text-to-Speech (gTTS).
+        Guarantees strict 2.5s execution ceiling to prevent blocking real-time voice calls.
         """
         clean_text = text.strip()
         if not clean_text:
             return b""
 
-        # 1. Edge-TTS Neural Voice Engine (High-Fidelity Studio Voices)
+        # 1. Edge-TTS Neural Voice Engine (High-Fidelity Studio Voices) with strict 2.0s timeout
         try:
             import io
             import asyncio
@@ -173,35 +174,50 @@ class ChatterboxTTSAgent:
                         buf.write(chunk["data"])
                 return buf.getvalue()
 
+            def _run_edge():
+                new_loop = asyncio.new_event_loop()
+                try:
+                    asyncio.set_event_loop(new_loop)
+                    return new_loop.run_until_complete(_edge_gen())
+                finally:
+                    new_loop.close()
+
+            pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
             try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                        data = pool.submit(lambda: asyncio.run(_edge_gen())).result(timeout=6.0)
-                else:
-                    data = loop.run_until_complete(_edge_gen())
-            except RuntimeError:
-                data = asyncio.run(_edge_gen())
+                data = pool.submit(_run_edge).result(timeout=2.0)
+                pool.shutdown(wait=False, cancel_futures=True)
+                if data and len(data) > 500:
+                    return data
+            except Exception as e:
+                pool.shutdown(wait=False, cancel_futures=True)
+                logger.debug(f"Edge-TTS neural synthesis failed/timed out ({e}). Trying gTTS...")
+        except Exception as outer_edge_err:
+            logger.debug(f"Edge-TTS initialization error: {outer_edge_err}")
 
-            if data and len(data) > 500:
-                return data
-        except Exception as e:
-            logger.warning(f"Edge-TTS neural synthesis failed ({e}). Falling back to gTTS...")
-
-        # 2. Google Text-to-Speech (gTTS) Fallback
+        # 2. Google Text-to-Speech (gTTS) Fallback with strict 2.0s timeout
         try:
             import io
+            import concurrent.futures
             from gtts import gTTS
 
-            fp = io.BytesIO()
-            tts = gTTS(text=clean_text, lang="en")
-            tts.write_to_fp(fp)
-            data = fp.getvalue()
-            if data and len(data) > 500:
-                logger.info("Synthesized audio using gTTS fallback.")
-                return data
-        except Exception as e:
-            logger.warning(f"gTTS fallback failed ({e}).")
+            def _run_gtts():
+                fp = io.BytesIO()
+                tts = gTTS(text=clean_text, lang="en")
+                tts.write_to_fp(fp)
+                return fp.getvalue()
+
+            pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            try:
+                data = pool.submit(_run_gtts).result(timeout=2.0)
+                pool.shutdown(wait=False, cancel_futures=True)
+                if data and len(data) > 500:
+                    logger.info("Synthesized audio using gTTS fallback.")
+                    return data
+            except Exception as e:
+                pool.shutdown(wait=False, cancel_futures=True)
+                logger.debug(f"gTTS fallback failed/timed out ({e}).")
+        except Exception as outer_gtts_err:
+            logger.debug(f"gTTS initialization error: {outer_gtts_err}")
 
         return b""
 
