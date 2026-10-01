@@ -23,11 +23,11 @@ import os
 import sys
 import base64
 import logging
-from typing import Dict, Any, Optional
-from pydantic import BaseModel
+from typing import Dict, Any, Optional, List
+from pydantic import BaseModel, Field
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, Response
 
 from dotenv import load_dotenv
 
@@ -50,6 +50,7 @@ from services.redis_cache import get_redis_cache
 from services.mongo_service import get_mongo_service
 from services.b2b_enrichment import B2BEnrichmentService
 from services.spring_sync_client import get_spring_sync_client
+from services.invoice_service import generate_invoice_pdf
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("SalesAgentServer")
@@ -147,19 +148,18 @@ def get_sample_audio():
 
 @app.post("/api/chat")
 async def chat_endpoint(req: ChatRequest):
-    """Direct text chat endpoint running full LangGraph reasoning + TTS non-blocking."""
+    """Direct text chat endpoint running stateful LangGraph reasoning + TTS non-blocking."""
+    from agent_workflow import stream_agent_turn
+
     def _run_agent():
-        return agent_app.invoke({
-            "messages": [HumanMessage(content=req.message)],
-            "session_id": req.session_id,
-            "lead_id": req.lead_id
-        })
+        return stream_agent_turn(
+            req.message,
+            session_id=req.session_id or "default_session",
+            lead_id=req.lead_id or "lead_default"
+        )
 
     result = await asyncio.to_thread(_run_agent)
-    agent_msg = result["messages"][-1]
-    reply_text = getattr(agent_msg, "content", "")
-    if not reply_text and hasattr(agent_msg, "additional_kwargs"):
-        reply_text = agent_msg.additional_kwargs.get("reasoning_content", "")
+    reply_text = result.get("reply", "")
     if not reply_text or not str(reply_text).strip():
         reply_text = "We offer flexible Starter ($499/mo) and Enterprise ($3,500/mo) packages with sub-300ms SLA and CRM integrations. Would you be open to a 10-minute demo on Thursday?"
     audio_base64 = None
@@ -181,6 +181,7 @@ async def chat_endpoint(req: ChatRequest):
         "friction_topic": result.get("friction_topic"),
         "rag_context": result.get("rag_context"),
         "enrichment": result.get("enrichment"),
+        "lead_info": result.get("lead_info"),
         "audio_base64": audio_base64
     }
 
@@ -228,6 +229,145 @@ def get_analytics():
         },
         "recent_leads": leads[:5]
     }
+
+
+# =====================================================================
+# PDF Invoice Generation & Email Dispatch Endpoints
+# =====================================================================
+
+class InvoiceEmailRequest(BaseModel):
+    recipient_email: str
+    customer_name: Optional[str] = "Decision Maker"
+    company_name: Optional[str] = "Prospect Organization"
+    plan: Optional[str] = "growth"
+    amount: Optional[float] = 1499.0
+    notes: Optional[str] = None
+
+
+@app.get("/api/invoice/download")
+def download_invoice(
+    plan: str = Query("growth", description="Selected package: starter ($499), growth ($1,499), or enterprise ($3,500)"),
+    amount: Optional[float] = Query(None, description="Optional override amount"),
+    name: str = Query("Decision Maker", description="Prospect customer name"),
+    company: str = Query("Prospect Organization", description="Prospect company name"),
+    email: str = Query("contact@prospect.com", description="Prospect email address"),
+    phone: Optional[str] = Query(None, description="Prospect phone number")
+):
+    """Generates and serves executive B2B PDF invoice file for download."""
+    import time
+    pdf_bytes = generate_invoice_pdf(
+        plan_key=plan,
+        amount=amount,
+        customer_name=name,
+        company_name=company,
+        email=email,
+        phone=phone
+    )
+    filename = f"ApexSales_Invoice_{plan.title()}_{int(time.time())}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )
+
+
+@app.get("/api/invoice/preview")
+def preview_invoice(
+    plan: str = Query("growth"),
+    amount: Optional[float] = Query(None),
+    name: str = Query("Decision Maker"),
+    company: str = Query("Prospect Organization"),
+    email: str = Query("contact@prospect.com"),
+    phone: Optional[str] = Query(None)
+):
+    """Opens the executive B2B PDF invoice inline inside the browser tab."""
+    pdf_bytes = generate_invoice_pdf(
+        plan_key=plan,
+        amount=amount,
+        customer_name=name,
+        company_name=company,
+        email=email,
+        phone=phone
+    )
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "inline; filename=ApexSales_Invoice.pdf"
+        }
+    )
+
+
+@app.post("/api/invoice/send-email")
+def send_invoice_email(req: InvoiceEmailRequest):
+    """Simulates immediate invoice email dispatch and logs confirmation to database."""
+    db = get_mongo_service()
+    db.save_lead({
+        "contact_name": req.customer_name,
+        "company": req.company_name,
+        "email": req.recipient_email,
+        "notes": f"[INVOICE DISPATCHED] Plan: {req.plan.title()} (${req.amount:,.2f}/mo). Emailed to {req.recipient_email}."
+    })
+    return {
+        "status": "success",
+        "message": f"Official PDF invoice for {req.plan.title()} Plan (${req.amount:,.2f}/mo) has been dispatched to {req.recipient_email}!",
+        "recipient": req.recipient_email,
+        "plan": req.plan,
+        "amount": req.amount
+    }
+
+
+# =====================================================================
+# Call & Chat History Persistence and Phone/Email Retrieval
+# =====================================================================
+
+class CallHistorySaveRequest(BaseModel):
+    history_id: Optional[str] = None
+    session_id: Optional[str] = None
+    customer_name: Optional[str] = "Valued Customer"
+    phone: Optional[str] = ""
+    email: Optional[str] = ""
+    company: Optional[str] = "Client Organization"
+    plan: Optional[str] = "growth"
+    amount: Optional[float] = 1499.0
+    transcript: Optional[list] = Field(default_factory=list)
+    call_duration_seconds: Optional[int] = 0
+    notes: Optional[str] = None
+
+CallHistorySaveRequest.model_rebuild()
+
+
+@app.post("/api/call-history")
+def save_call_history(req: CallHistorySaveRequest):
+    """Saves full call & chat history along with verified plan selection, indexed by phone & email."""
+    db = get_mongo_service()
+    data = req.model_dump() if hasattr(req, "model_dump") else req.dict()
+    hist_id = db.save_call_history(data)
+    return {
+        "status": "success",
+        "history_id": hist_id,
+        "customer_name": req.customer_name,
+        "phone": req.phone,
+        "email": req.email,
+        "plan": req.plan,
+        "amount": req.amount,
+        "message": f"Call & chat history saved successfully! Tied to {req.phone} and {req.email}."
+    }
+
+
+@app.get("/api/call-history/lookup")
+def lookup_call_history(query: str = Query(..., description="Phone number or email to lookup")):
+    """Searches saved call histories and returns transcripts, confirmed plan, and direct PDF invoice download URL."""
+    db = get_mongo_service()
+    records = db.lookup_call_history(query)
+    return {
+        "query": query,
+        "count": len(records),
+        "records": records
+    }
+
 
 
 # =====================================================================
